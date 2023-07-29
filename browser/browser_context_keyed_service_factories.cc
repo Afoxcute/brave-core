@@ -96,7 +96,9 @@
 #endif
 
 #if BUILDFLAG(ENABLE_AI_CHAT)
+#include "brave/components/ai_chat/content/browser/ai_chat_service_factory.h"
 #include "brave/components/ai_chat/content/browser/model_service_factory.h"
+#include "brave/components/ai_chat/core/common/features.h"
 #endif
 
 namespace brave {
@@ -192,6 +194,11 @@ void EnsureBrowserContextKeyedServiceFactoriesBuilt() {
 #endif
 #if BUILDFLAG(ENABLE_AI_CHAT)
   ai_chat::ModelServiceFactory::GetInstance();
+#endif
+#if BUILDFLAG(ENABLE_AI_CHAT)
+  if (ai_chat::features::IsAIChatEnabled()) {
+    ai_chat::AIChatServiceFactory::GetInstance();
+  }
 #endif
 }
 
