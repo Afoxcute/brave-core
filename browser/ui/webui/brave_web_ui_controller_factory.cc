@@ -43,6 +43,7 @@
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "brave/browser/brave_wallet/brave_wallet_context_utils.h"
+#include "brave/browser/ui/webui/brave_education/brave_education_ui.h"
 #include "brave/browser/ui/webui/brave_news_internals/brave_news_internals_ui.h"
 #include "brave/browser/ui/webui/brave_rewards/rewards_page_top_ui.h"
 #include "brave/browser/ui/webui/brave_rewards/rewards_panel_ui.h"
@@ -182,6 +183,8 @@ WebUIController* NewWebUI(WebUI* web_ui, const GURL& url) {
     return new ShieldsPanelUI(web_ui);
   } else if (host == kSpeedreaderPanelHost) {
     return new SpeedreaderToolbarUI(web_ui, url.host());
+  } else if (host == kBraveGettingStartedHost) {
+    return new brave_education::BraveEducationUI(web_ui, url.host());
   } else if (host == kCookieListOptInHost) {
     if (base::FeatureList::IsEnabled(
             brave_shields::features::kBraveAdblockCookieListOptIn)) {
@@ -230,6 +233,7 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
   if (url.host_piece() == kAdblockHost ||
       url.host_piece() == kAdblockInternalsHost ||
       url.host_piece() == kWebcompatReporterHost ||
+      url.host_piece() == kBraveGettingStartedHost ||
       (url.host_piece() == kSkusInternalsHost &&
        base::FeatureList::IsEnabled(skus::features::kSkusFeature)) ||
 #if BUILDFLAG(IS_ANDROID)
