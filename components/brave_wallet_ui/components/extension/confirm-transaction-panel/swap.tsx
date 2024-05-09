@@ -35,7 +35,7 @@ import {
 } from '../../../common/hooks/use-safe-selector'
 
 interface Props {
-  retrySimulation?: () => void
+  readonly retrySimulation?: () => void
 }
 
 export function ConfirmSwapTransaction({ retrySimulation }: Props) {
