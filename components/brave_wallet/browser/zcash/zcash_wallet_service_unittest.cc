@@ -24,6 +24,7 @@
 #include "brave/components/brave_wallet/common/common_utils.h"
 #include "brave/components/brave_wallet/common/features.h"
 #include "brave/components/brave_wallet/common/hex_utils.h"
+#include "brave/components/brave_wallet/common/test_utils.h"
 #include "brave/components/brave_wallet/common/zcash_utils.h"
 #include "brave/components/services/brave_wallet/public/mojom/zcash_decoder.mojom.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
@@ -90,6 +91,11 @@ class MockZCashRPC : public ZCashRpc {
 
   MOCK_METHOD2(GetLatestTreeState,
                void(const std::string& chain_id,
+                    GetTreeStateCallback callback));
+
+  MOCK_METHOD3(GetTreeState,
+               void(const std::string& chain_id,
+                    zcash::mojom::BlockIDPtr block_id,
                     GetTreeStateCallback callback));
 };
 
@@ -510,8 +516,92 @@ TEST_F(ZCashWalletServiceUnitTest, ValidateZCashAddress) {
   }
 }
 
+#if BUILDFLAG(ENABLE_ORCHARD)
+
+TEST_F(ZCashWalletServiceUnitTest, MakeAccountShielded) {
+  keyring_service()->Reset();
+  keyring_service()->RestoreWallet(
+      "gate junior chunk maple cage select orange circle price air tortoise "
+      "jelly art frequent fence middle ice moral wage toddler attitude sign "
+      "lesson grain",
+      kTestWalletPassword, false, base::DoNothing());
+  OrchardBundleManager::OverrideRandomSeedForTesting(70972);
+  GetAccountUtils().EnsureAccount(mojom::KeyringId::kZCashMainnet, 0);
+  GetAccountUtils().EnsureAccount(mojom::KeyringId::kZCashMainnet, 1);
+
+  auto account_id_1 = MakeIndexBasedAccountId(mojom::CoinType::ZEC,
+                                              mojom::KeyringId::kZCashMainnet,
+                                              mojom::AccountKind::kDerived, 0);
+  auto account_id_2 = MakeIndexBasedAccountId(mojom::CoinType::ZEC,
+                                              mojom::KeyringId::kZCashMainnet,
+                                              mojom::AccountKind::kDerived, 1);
+
+  ON_CALL(*zcash_rpc(), GetLatestBlock(_, _))
+      .WillByDefault(
+          ::testing::Invoke([&](const std::string& chain_id,
+                                ZCashRpc::GetLatestBlockCallback callback) {
+            auto response =
+                zcash::mojom::BlockID::New(100000u, std::vector<uint8_t>());
+            std::move(callback).Run(std::move(response));
+          }));
+
+  ON_CALL(*zcash_rpc(), GetTreeState(_, _, _))
+      .WillByDefault(::testing::Invoke(
+          [&](const std::string& chain_id, zcash::mojom::BlockIDPtr block_id,
+              ZCashRpc::GetTreeStateCallback callback) {
+            EXPECT_EQ(block_id->height, 100000u - kChainReorgBlockDelta);
+            auto tree_state = zcash::mojom::TreeState::New(
+                "main" /* network */,
+                100000u - kChainReorgBlockDelta /* height */,
+                "hexhexhex2" /* hash */, 123 /* time */, "" /* sapling tree */,
+                "" /* orchard tree */);
+            std::move(callback).Run(std::move(tree_state));
+          }));
+
+  {
+    base::MockCallback<ZCashWalletService::MakeAccountShieldedCallback>
+        make_account_shielded_callback;
+    EXPECT_CALL(make_account_shielded_callback, Run(Eq(std::nullopt)));
+
+    zcash_wallet_service_->MakeAccountShielded(
+        account_id_1.Clone(), make_account_shielded_callback.Get());
+    task_environment_.RunUntilIdle();
+  }
+
+  {
+    base::MockCallback<ZCashWalletService::GetAccountShieldBirthdayCallback>
+        get_account_shield_birthday_callback;
+    EXPECT_CALL(get_account_shield_birthday_callback,
+                Run(EqualsMojo(mojom::ZCashAccountShieldBirthday::New(
+                        100000u - kChainReorgBlockDelta, "hexhexhex2")),
+                    Eq(std::nullopt)));
+    zcash_wallet_service_->GetAccountShieldBirthday(
+        account_id_1.Clone(), get_account_shield_birthday_callback.Get());
+    task_environment_.RunUntilIdle();
+  }
+
+  {
+    base::MockCallback<ZCashWalletService::IsAccountShieldedCallback>
+        is_account_shielded_callback;
+    EXPECT_CALL(is_account_shielded_callback, Run(Eq(false)));
+    zcash_wallet_service_->IsAccountShielded(
+        account_id_2.Clone(), is_account_shielded_callback.Get());
+    task_environment_.RunUntilIdle();
+  }
+
+  {
+    base::MockCallback<ZCashWalletService::GetAccountShieldBirthdayCallback>
+        get_account_shield_birthday_callback;
+    EXPECT_CALL(get_account_shield_birthday_callback,
+                Run(EqualsMojo(mojom::ZCashAccountShieldBirthdayPtr()), _));
+    zcash_wallet_service_->GetAccountShieldBirthday(
+        account_id_2.Clone(), get_account_shield_birthday_callback.Get());
+    task_environment_.RunUntilIdle();
+  }
+}
+
 // Disabled on android due timeout failures
-#if BUILDFLAG(ENABLE_ORCHARD) && !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID)
 
 TEST_F(ZCashWalletServiceUnitTest, ShieldFunds_FailsOnNetworkError) {
   // Creating authorized orchard bundle may take a time
@@ -664,7 +754,8 @@ TEST_F(ZCashWalletServiceUnitTest, ShieldFunds) {
 
   zcash_wallet_service_->ShieldFunds(mojom::kZCashMainnet, account_id.Clone(),
                                      shield_funds_callback.Get());
-  task_environment_.RunUntilIdle();
+  // Workaround to increase test timeout
+  base::RunLoop::RunUntilIdle();
   testing::Mock::VerifyAndClearExpectations(&shield_funds_callback);
 
   EXPECT_EQ(
@@ -930,6 +1021,7 @@ TEST_F(ZCashWalletServiceUnitTest, ShieldFunds) {
       ToHex(captured_data));
 }
 
+#endif
 #endif  // BUILDFLAG(ENABLE_ORCHARD)
 
 }  // namespace brave_wallet

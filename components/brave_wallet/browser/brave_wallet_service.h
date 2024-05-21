@@ -74,7 +74,8 @@ class BraveWalletService : public KeyedService,
       scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
       std::unique_ptr<BraveWalletServiceDelegate> delegate,
       PrefService* profile_prefs,
-      PrefService* local_state);
+      PrefService* local_state,
+      base::FilePath data_path);
 
   ~BraveWalletService() override;
 

@@ -50,6 +50,9 @@ std::optional<mojom::CoinType> GetCoinTypeFromPrefKey_DEPRECATED(
     const std::string& key);
 
 namespace {
+
+inline constexpr char kZCashDataFolderName[] = "zcash_data";
+
 bool AccountMatchesCoinAndChain(const mojom::AccountId& account_id,
                                 mojom::CoinType coin,
                                 const std::string& chain_id) {
@@ -102,7 +105,8 @@ BraveWalletService::BraveWalletService(
     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
     std::unique_ptr<BraveWalletServiceDelegate> delegate,
     PrefService* profile_prefs,
-    PrefService* local_state)
+    PrefService* local_state,
+    base::FilePath data_path)
     : delegate_(std::move(delegate)),
       network_manager_(std::make_unique<NetworkManager>(profile_prefs)),
       json_rpc_service_(std::make_unique<JsonRpcService>(url_loader_factory,
@@ -128,8 +132,8 @@ BraveWalletService::BraveWalletService(
 
   if (IsZCashEnabled()) {
     zcash_wallet_service_ = std::make_unique<ZCashWalletService>(
-        keyring_service(), profile_prefs, network_manager(),
-        url_loader_factory);
+        data_path.Append(kZCashDataFolderName), keyring_service(),
+        profile_prefs, network_manager(), url_loader_factory);
   }
 
   tx_service_ = std::make_unique<TxService>(

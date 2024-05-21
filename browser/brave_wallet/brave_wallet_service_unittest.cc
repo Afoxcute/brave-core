@@ -328,8 +328,12 @@ class BraveWalletServiceUnitTest : public testing::Test {
     service_ = std::make_unique<BraveWalletService>(
         shared_url_loader_factory_,
         BraveWalletServiceDelegate::Create(profile_.get()), GetPrefs(),
-        local_state_->Get());
+<<<<<<< HEAD
+        local_state_->Get(), temp_dir_.GetPath());
     network_manager_ = service_->network_manager();
+=======
+        local_state_->Get(), temp_dir_.GetPath());
+>>>>>>> 5fee3ba17dc (Balance resolution wip)
     json_rpc_service_ = service_->json_rpc_service();
     keyring_service_ = service_->keyring_service();
     bitcoin_wallet_service_ = service_->GetBitcoinWalletService();
@@ -867,6 +871,7 @@ class BraveWalletServiceUnitTest : public testing::Test {
   network::TestURLLoaderFactory url_loader_factory_;
   scoped_refptr<network::SharedURLLoaderFactory> shared_url_loader_factory_;
   data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
+  base::ScopedTempDir temp_dir_;
 };
 
 TEST_F(BraveWalletServiceUnitTest, GetUserAssets) {

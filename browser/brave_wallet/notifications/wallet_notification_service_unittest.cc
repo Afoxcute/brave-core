@@ -44,7 +44,7 @@ class WalletNotificationServiceUnitTest : public testing::Test {
 
     brave_wallet_service_ = std::make_unique<BraveWalletService>(
         shared_url_loader_factory_, TestBraveWalletServiceDelegate::Create(),
-        prefs(), local_state());
+        prefs(), local_state(), profile_.GetPath());
 
     notification_service_ = std::make_unique<WalletNotificationService>(
         brave_wallet_service_.get(), profile());

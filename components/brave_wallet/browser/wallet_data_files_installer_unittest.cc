@@ -108,7 +108,7 @@ class WalletDataFilesInstallerUnitTest : public testing::Test {
     brave_wallet_service_ = std::make_unique<BraveWalletService>(
         shared_url_loader_factory_,
         std::make_unique<MockBraveWalletServiceDelegateImpl>(), &prefs_,
-        &local_state_);
+        &local_state_, temp_dir_.GetPath());
     keyring_service_ = brave_wallet_service_->keyring_service();
 
     cus_ = std::make_unique<component_updater::MockComponentUpdateService>();
@@ -236,6 +236,7 @@ class WalletDataFilesInstallerUnitTest : public testing::Test {
   std::unique_ptr<BraveWalletService> brave_wallet_service_;
   std::unique_ptr<component_updater::MockComponentUpdateService> cus_;
   base::FilePath install_dir_;
+  base::ScopedTempDir temp_dir_;
 };
 
 TEST_F(WalletDataFilesInstallerUnitTest,

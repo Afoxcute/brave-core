@@ -164,6 +164,8 @@ class KeyringServiceUnitTest : public testing::Test {
 
   JsonRpcService* json_rpc_service() { return json_rpc_service_.get(); }
 
+  base::FilePath GetDataPath() { return temp_dir_.GetPath(); }
+
   network::TestURLLoaderFactory& url_loader_factory() {
     return url_loader_factory_;
   }
@@ -1474,7 +1476,7 @@ TEST_F(KeyringServiceUnitTest, RestoreLegacyBraveWallet) {
   const char* mnemonic12 = kMnemonicDripCaution;
   BraveWalletService brave_wallet_service(
       shared_url_loader_factory(), TestBraveWalletServiceDelegate::Create(),
-      GetPrefs(), GetLocalState());
+      GetPrefs(), GetLocalState(), GetDataPath());
   KeyringService& service = *brave_wallet_service.keyring_service();
   auto verify_restore_wallet = base::BindLambdaForTesting(
       [&service](const char* mnemonic, const char* address, bool is_legacy,
@@ -3036,7 +3038,7 @@ TEST_F(KeyringServiceAccountDiscoveryUnitTest, AccountDiscovery) {
   PrepareAccounts(mojom::CoinType::ETH, mojom::kDefaultKeyringId);
   BraveWalletService brave_wallet_service(
       shared_url_loader_factory(), TestBraveWalletServiceDelegate::Create(),
-      GetPrefs(), GetLocalState());
+      GetPrefs(), GetLocalState(), GetDataPath());
   BitcoinTestRpcServer bitcoin_test_rpc_server(
       brave_wallet_service.GetBitcoinWalletService());
 
@@ -3077,7 +3079,7 @@ TEST_F(KeyringServiceAccountDiscoveryUnitTest, SolAccountDiscovery) {
 
   BraveWalletService brave_wallet_service(
       shared_url_loader_factory(), TestBraveWalletServiceDelegate::Create(),
-      GetPrefs(), GetLocalState());
+      GetPrefs(), GetLocalState(), GetDataPath());
   KeyringService& service = *brave_wallet_service.keyring_service();
   BitcoinTestRpcServer bitcoin_test_rpc_server(
       brave_wallet_service.GetBitcoinWalletService());
@@ -3119,7 +3121,7 @@ TEST_F(KeyringServiceAccountDiscoveryUnitTest, FilAccountDiscovery) {
 
   BraveWalletService brave_wallet_service(
       shared_url_loader_factory(), TestBraveWalletServiceDelegate::Create(),
-      GetPrefs(), GetLocalState());
+      GetPrefs(), GetLocalState(), GetDataPath());
   KeyringService& service = *brave_wallet_service.keyring_service();
   BitcoinTestRpcServer bitcoin_test_rpc_server(
       brave_wallet_service.GetBitcoinWalletService());
@@ -3163,7 +3165,7 @@ TEST_F(KeyringServiceUnitTest, BitcoinDiscovery) {
 
   BraveWalletService brave_wallet_service(
       shared_url_loader_factory(), TestBraveWalletServiceDelegate::Create(),
-      GetPrefs(), GetLocalState());
+      GetPrefs(), GetLocalState(), GetDataPath());
   KeyringService& service = *brave_wallet_service.keyring_service();
   BitcoinTestRpcServer bitcoin_test_rpc_server(
       brave_wallet_service.GetBitcoinWalletService());
@@ -3241,7 +3243,7 @@ TEST_F(KeyringServiceAccountDiscoveryUnitTest, StopsOnError) {
 
   BraveWalletService brave_wallet_service(
       shared_url_loader_factory(), TestBraveWalletServiceDelegate::Create(),
-      GetPrefs(), GetLocalState());
+      GetPrefs(), GetLocalState(), GetDataPath());
   KeyringService& service = *brave_wallet_service.keyring_service();
   BitcoinTestRpcServer bitcoin_test_rpc_server(
       brave_wallet_service.GetBitcoinWalletService());
@@ -3283,7 +3285,7 @@ TEST_F(KeyringServiceAccountDiscoveryUnitTest, ManuallyAddAccount) {
 
   BraveWalletService brave_wallet_service(
       shared_url_loader_factory(), TestBraveWalletServiceDelegate::Create(),
-      GetPrefs(), GetLocalState());
+      GetPrefs(), GetLocalState(), GetDataPath());
   KeyringService& service = *brave_wallet_service.keyring_service();
   BitcoinTestRpcServer bitcoin_test_rpc_server(
       brave_wallet_service.GetBitcoinWalletService());
@@ -3346,7 +3348,7 @@ TEST_F(KeyringServiceAccountDiscoveryUnitTest, RestoreWalletTwice) {
 
   BraveWalletService brave_wallet_service(
       shared_url_loader_factory(), TestBraveWalletServiceDelegate::Create(),
-      GetPrefs(), GetLocalState());
+      GetPrefs(), GetLocalState(), GetDataPath());
   KeyringService& service = *brave_wallet_service.keyring_service();
   BitcoinTestRpcServer bitcoin_test_rpc_server(
       brave_wallet_service.GetBitcoinWalletService());

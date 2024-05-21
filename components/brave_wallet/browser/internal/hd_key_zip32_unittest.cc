@@ -76,4 +76,6 @@ TEST(HDKeyZip32Test, GenerateFromSeed) {
   }
 }
 
+TEST(HDKeyZip32Test, FullViewKey) {}
+
 }  // namespace brave_wallet

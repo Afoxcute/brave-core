@@ -64,7 +64,7 @@ class BraveWalletP3AUnitTest : public testing::Test {
 
     brave_wallet_service_ = std::make_unique<BraveWalletService>(
         shared_url_loader_factory_, TestBraveWalletServiceDelegate::Create(),
-        &prefs_, &local_state_);
+        &prefs_, &local_state_, temp_dir_.GetPath());
     brave_wallet_service_->json_rpc_service()->SetAPIRequestHelperForTesting(
         shared_url_loader_factory_);
     keyring_service_ = brave_wallet_service_->keyring_service();
@@ -358,6 +358,7 @@ class BraveWalletP3AUnitTest : public testing::Test {
   scoped_refptr<network::SharedURLLoaderFactory> shared_url_loader_factory_;
   network::TestURLLoaderFactory url_loader_factory_;
   data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
+  base::ScopedTempDir temp_dir_;
 };
 
 TEST_F(BraveWalletP3AUnitTest, KeyringCreated) {

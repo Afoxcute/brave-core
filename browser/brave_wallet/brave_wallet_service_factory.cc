@@ -55,7 +55,8 @@ KeyedService* BraveWalletServiceFactory::BuildServiceInstanceFor(
 
   return new BraveWalletService(
       shared_url_loader_factory, BraveWalletServiceDelegate::Create(context),
-      user_prefs::UserPrefs::Get(context), g_browser_process->local_state());
+      user_prefs::UserPrefs::Get(context), g_browser_process->local_state(),
+      context->GetPath());
 }
 
 content::BrowserContext* BraveWalletServiceFactory::GetBrowserContextToUse(
