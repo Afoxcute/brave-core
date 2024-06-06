@@ -150,6 +150,11 @@ void SetWebcompatFeatureSetting(HostContentSettingsMap* map,
                                 const GURL& url,
                                 PrefService* local_state);
 
+ControlType GetWebcompatFeatureSetting(
+    HostContentSettingsMap* map,
+    ContentSettingsType webcompat_settings_type,
+    const GURL& url);
+
 bool IsSameOriginNavigation(const GURL& referrer, const GURL& target_url);
 
 bool MaybeChangeReferrer(bool allow_referrers,

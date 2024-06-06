@@ -217,9 +217,9 @@ BraveSessionCache::BraveSessionCache(ExecutionContext& context)
   const uint64_t* fudge = reinterpret_cast<const uint64_t*>(domain_key_);
   double fudge_factor = 0.99 + ((*fudge / maxUInt64AsDouble) / 100);
   uint64_t seed = *reinterpret_cast<uint64_t*>(domain_key_);
-  if (blink::WebContentSettingsClient* settings =
-          GetContentSettingsClientFor(&context, true)) {
-    auto raw_farbling_level = settings->GetBraveFarblingLevel(
+  settings_client_ = GetContentSettingsClientFor(&context, true);
+  if (settings_client_) {
+    auto raw_farbling_level = settings_client_->GetBraveFarblingLevel(
         ContentSettingsType::BRAVE_WEBCOMPAT_NONE);
     farbling_level_ =
         base::FeatureList::IsEnabled(
@@ -228,16 +228,7 @@ BraveSessionCache::BraveSessionCache(ExecutionContext& context)
             : (raw_farbling_level == BraveFarblingLevel::OFF
                    ? BraveFarblingLevel::OFF
                    : BraveFarblingLevel::BALANCED);
-    for (auto webcompat_content_settings =
-             ContentSettingsType::BRAVE_WEBCOMPAT_NONE;
-         webcompat_content_settings != ContentSettingsType::BRAVE_WEBCOMPAT_ALL;
-         webcompat_content_settings = static_cast<ContentSettingsType>(
-             static_cast<int32_t>(webcompat_content_settings) + 1)) {
-      auto farbling_level =
-          settings->GetBraveFarblingLevel(webcompat_content_settings);
-      farbling_levels_.insert(webcompat_content_settings, farbling_level);
-    }
-    if (settings->GetBraveFarblingLevel(
+    if (settings_client_->GetBraveFarblingLevel(
             ContentSettingsType::BRAVE_WEBCOMPAT_AUDIO) !=
         BraveFarblingLevel::OFF) {
       audio_farbling_helper_.emplace(
@@ -409,6 +400,14 @@ BraveFarblingLevel BraveSessionCache::GetBraveFarblingLevel(
   auto item = farbling_levels_.find(webcompat_content_settings);
   if (item != farbling_levels_.end()) {
     return item->value;
+  }
+  if (settings_client_ != nullptr &&
+      webcompat_content_settings > ContentSettingsType::BRAVE_WEBCOMPAT_NONE &&
+      webcompat_content_settings < ContentSettingsType::BRAVE_WEBCOMPAT_ALL) {
+    auto farbling_level =
+        settings_client_->GetBraveFarblingLevel(webcompat_content_settings);
+    farbling_levels_.insert(webcompat_content_settings, farbling_level);
+    return farbling_level;
   }
   return farbling_level_;
 }

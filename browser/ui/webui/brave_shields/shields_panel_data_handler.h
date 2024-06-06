@@ -52,6 +52,8 @@ class ShieldsPanelDataHandler
   void UpdateFavicon() override;
   void AllowScriptsOnce(const std::vector<std::string>& origins) override;
   void BlockAllowedScripts(const std::vector<std::string>& origins) override;
+  void SetWebcompat(ContentSettingsType webcompat_settings_type,
+                    bool disable) override;
 
  private:
   void UpdateSiteBlockInfo();

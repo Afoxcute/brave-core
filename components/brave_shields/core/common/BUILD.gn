@@ -40,7 +40,10 @@ mojom("mojom") {
     "filter_list.mojom",
   ]
 
+  deps = [ "//components/content_settings/core/common:content_settings_types" ]
+
   public_deps = [
+    "//components/content_settings/core/common:mojo_bindings",
     "//mojo/public/mojom/base",
     "//ui/gfx/geometry/mojom",
     "//url/mojom:url_mojom_gurl",

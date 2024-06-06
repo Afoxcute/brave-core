@@ -881,4 +881,26 @@ void SetWebcompatFeatureSetting(HostContentSettingsMap* map,
   RecordShieldsSettingChanged(local_state);
 }
 
+ControlType GetWebcompatFeatureSetting(
+    HostContentSettingsMap* map,
+    ContentSettingsType webcompat_settings_type,
+    const GURL& url) {
+  DCHECK(map);
+
+  if (!url.SchemeIsHTTPOrHTTPS() && !url.is_empty()) {
+    return ControlType::BLOCK;
+  }
+
+  ContentSetting setting =
+      map->GetContentSetting(url, url, webcompat_settings_type);
+
+  if (setting == CONTENT_SETTING_ALLOW) {
+    // Disabled (allow fingerprinting)
+    return ControlType::ALLOW;
+  } else {
+    // Enabled (block fingerprinting)
+    return ControlType::BLOCK;
+  }
+}
+
 }  // namespace brave_shields

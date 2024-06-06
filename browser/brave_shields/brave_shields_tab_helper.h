@@ -51,6 +51,8 @@ class BraveShieldsTabHelper
                          const std::string& subresource);
   void HandleItemAllowedOnce(const std::string& allowed_once_type,
                              const std::string& subresource);
+  void HandleWebcompatFeatureInvoked(
+      ContentSettingsType webcompat_content_settings);
   void ClearAllResourcesList();
   int GetTotalBlockedCount();
   std::vector<GURL> GetBlockedAdsList();
@@ -62,6 +64,7 @@ class BraveShieldsTabHelper
   void SetBraveShieldsEnabled(bool is_enabled);
   GURL GetCurrentSiteURL();
   GURL GetFaviconURL(bool refresh);
+  std::vector<ContentSettingsType> GetInvokedWebcompatFeaturesList();
 
   AdBlockMode GetAdBlockMode();
   FingerprintMode GetFingerprintMode();
@@ -79,6 +82,8 @@ class BraveShieldsTabHelper
   void SetForgetFirstPartyStorageEnabled(bool is_enabled);
   void AllowScriptsOnce(const std::vector<std::string>& origins);
   void BlockAllowedScripts(const std::vector<std::string>& origins);
+  void SetWebcompat(ContentSettingsType webcompat_settings_type, bool disabled);
+  base::flat_map<ContentSettingsType, bool> GetWebcompatSettings();
 
   void AddObserver(Observer* obs);
   void RemoveObserver(Observer* obs);
@@ -115,6 +120,7 @@ class BraveShieldsTabHelper
   std::set<GURL> resource_list_blocked_js_;
   std::set<GURL> resource_list_allowed_once_js_;
   std::set<GURL> resource_list_blocked_fingerprints_;
+  std::set<ContentSettingsType> webcompat_features_invoked_;
   base::ScopedObservation<HostContentSettingsMap, content_settings::Observer>
       observation_{this};
 
