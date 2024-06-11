@@ -65,7 +65,9 @@ std::vector<mojom::ConversationPtr> AIChatDatabase::GetAllConversations() {
     conversation->id = statement.ColumnInt64(0);
     conversation->title = statement.ColumnString(1);
     conversation->page_url = GURL(statement.ColumnString(2));
-    conversation->date = DeserializeTime(statement.ColumnInt64(3));
+    conversation->page_contents = statement.ColumnString(3);
+    // Change the index here, if you're extending the conversation schema
+    conversation->date = DeserializeTime(statement.ColumnInt64(4));
     conversation_list.emplace_back(std::move(conversation));
   }
 
@@ -124,9 +126,9 @@ std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
 }
 
 int64_t AIChatDatabase::AddConversation(mojom::ConversationPtr conversation) {
-  sql::Statement statement(
-      GetDB().GetUniqueStatement("INSERT INTO conversation(id, title, "
-                                 "page_url) VALUES(NULL, ?, ?)"));
+  sql::Statement statement(GetDB().GetUniqueStatement(
+      "INSERT INTO conversation(id, title, "
+      "page_url, page_contents) VALUES(NULL, ?, ?, ?)"));
   CHECK(statement.is_valid());
 
   statement.BindString(0, conversation->title);
@@ -134,6 +136,12 @@ int64_t AIChatDatabase::AddConversation(mojom::ConversationPtr conversation) {
     statement.BindString(1, conversation->page_url->spec());
   } else {
     statement.BindNull(1);
+  }
+
+  if (conversation->page_contents.has_value()) {
+    statement.BindString(2, conversation->page_contents.value());
+  } else {
+    statement.BindNull(2);
   }
 
   if (!statement.Run()) {
@@ -179,8 +187,7 @@ int64_t AIChatDatabase::AddConversationEntry(
       0, SerializeTimeToDelta(entry->texts[0]->date));
   insert_conversation_entry_statement.BindInt(
       1, static_cast<int>(entry->character_type));
-  insert_conversation_entry_statement.BindInt64(
-      2, conversation_id);
+  insert_conversation_entry_statement.BindInt64(2, conversation_id);
 
   if (!insert_conversation_entry_statement.Run()) {
     DVLOG(0) << "Failed to execute 'conversation_entry' insert statement: "
@@ -301,7 +308,8 @@ bool AIChatDatabase::CreateConversationTable() {
       "CREATE TABLE IF NOT EXISTS conversation("
       "id INTEGER PRIMARY KEY,"
       "title TEXT,"
-      "page_url TEXT)");
+      "page_url TEXT,"
+      "page_contents TEXT)");
 }
 
 bool AIChatDatabase::CreateConversationEntryTable() {

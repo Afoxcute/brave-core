@@ -6,6 +6,7 @@
 #include "brave/components/ai_chat/core/browser/ai_chat_database.h"
 
 #include <stdint.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
@@ -51,13 +52,15 @@ class AIChatDatabaseTest : public testing::Test {
 
 TEST_F(AIChatDatabaseTest, AddConversations) {
   int64_t first_id = db_->AddConversation(mojom::Conversation::New(
-      INT64_C(1), base::Time::Now(), "Initial conversation", GURL()));
+      INT64_C(1), base::Time::Now(), "Initial conversation", GURL(),
+      "Sample page content"));
   EXPECT_EQ(first_id, INT64_C(1));
   std::vector<mojom::ConversationPtr> conversations =
       db_->GetAllConversations();
   EXPECT_EQ(conversations.size(), UINT64_C(1));
   int64_t second_id = db_->AddConversation(mojom::Conversation::New(
-      INT64_C(2), base::Time::Now(), "Another conversation", GURL()));
+      INT64_C(2), base::Time::Now(), "Another conversation", GURL(),
+      "Another sample page content"));
   EXPECT_EQ(second_id, INT64_C(2));
   std::vector<mojom::ConversationPtr> conversations_updated =
       db_->GetAllConversations();
@@ -70,7 +73,7 @@ TEST_F(AIChatDatabaseTest, AddConversationEntries) {
 
   static const GURL kURL = GURL("https://brave.com/");
   static const char kConversationTitle[] = "Summarizing Brave";
-
+  static const char kPageContents[] = "Brave is a web browser.";
   static const char kFirstResponse[] = "This is a generated response";
   static const char kSecondResponse[] = "This is a re-generated response";
 
@@ -83,8 +86,9 @@ TEST_F(AIChatDatabaseTest, AddConversationEntries) {
                                                         kFirstResponse));
 
   // Add conversation
-  int64_t conversation_id = db_->AddConversation(mojom::Conversation::New(
-      kConversationId, kFirstTextCreatedAt, kConversationTitle, kURL));
+  int64_t conversation_id = db_->AddConversation(
+      mojom::Conversation::New(kConversationId, kFirstTextCreatedAt,
+                               kConversationTitle, kURL, kPageContents));
   EXPECT_EQ(conversation_id, kConversationId);
 
   // Add conversation entry
@@ -101,6 +105,7 @@ TEST_F(AIChatDatabaseTest, AddConversationEntries) {
   EXPECT_EQ(conversations[0]->id, INT64_C(1));
   EXPECT_EQ(conversations[0]->title, kConversationTitle);
   EXPECT_EQ(conversations[0]->page_url->spec(), kURL.spec());
+  EXPECT_EQ(conversations[0]->page_contents, kPageContents);
   // Conversation's date must match first text's date
   EXPECT_EQ(GetInternalValue(conversations[0]->date),
             GetInternalValue(kFirstTextCreatedAt));

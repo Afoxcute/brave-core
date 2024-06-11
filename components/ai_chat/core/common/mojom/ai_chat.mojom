@@ -218,6 +218,7 @@ struct Conversation {
  mojo_base.mojom.Time date;
  string title;
  url.mojom.Url? page_url;
+ string? page_contents;
 };
 
 struct ConversationEntry {

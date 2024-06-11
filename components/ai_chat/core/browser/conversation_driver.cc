@@ -1198,7 +1198,7 @@ bool ConversationDriver::IsContentAssociationPossible() {
 void ConversationDriver::CreateAndSyncConversation() {
   if ((chat_history_.size() >= 1) && !conversation_) {
     auto conversation = mojom::Conversation::New(
-        -1, base::Time::Now(), "A conversation", GetPageURL());
+        -1, base::Time::Now(), "A conversation", GetPageURL(), article_text_);
 
     CHECK(service_);
 
