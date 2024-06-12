@@ -62,12 +62,12 @@ std::vector<mojom::ConversationPtr> AIChatDatabase::GetAllConversations() {
 
   while (statement.Step()) {
     mojom::ConversationPtr conversation = mojom::Conversation::New();
-    conversation->id = statement.ColumnInt64(0);
-    conversation->title = statement.ColumnString(1);
-    conversation->page_url = GURL(statement.ColumnString(2));
-    conversation->page_contents = statement.ColumnString(3);
-    // Change the index here, if you're extending the conversation schema
-    conversation->date = DeserializeTime(statement.ColumnInt64(4));
+    int index = 0;
+    conversation->id = statement.ColumnInt64(index++);
+    conversation->title = statement.ColumnString(index++);
+    conversation->page_url = GURL(statement.ColumnString(index++));
+    conversation->page_contents = statement.ColumnString(index++);
+    conversation->date = DeserializeTime(statement.ColumnInt64(index++));
     conversation_list.emplace_back(std::move(conversation));
   }
 
@@ -94,32 +94,36 @@ std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
   while (statement.Step()) {
     mojom::ConversationEntryTextPtr entry_text =
         mojom::ConversationEntryText::New();
-    entry_text->id = statement.ColumnInt64(4);
-    entry_text->date = DeserializeTime(statement.ColumnInt64(5));
-    entry_text->text = statement.ColumnString(6);
+    entry_text->id = statement.ColumnInt64(6);
+    entry_text->date = DeserializeTime(statement.ColumnInt64(7));
+    entry_text->text = statement.ColumnString(8);
+    int64_t conversation_entry_id = statement.ColumnInt64(0);
 
-    int64_t conversation_entry_id = statement.ColumnInt64(7);
-
-    auto iter = base::ranges::find_if(
+    auto found_entry_iter = base::ranges::find_if(
         history,
         [&conversation_entry_id](const mojom::ConversationEntryPtr& entry) {
-          return entry->id = conversation_entry_id;
+          return entry->id == conversation_entry_id;
         });
 
-    // A ConversationEntry can include multiple generated texts
-    if (iter != history.end()) {
-      iter->get()->texts.emplace_back(std::move(entry_text));
-      continue;
+    // Find if the entry already exists in the history
+    if (found_entry_iter != history.end()) {
+      found_entry_iter->get()->texts.emplace_back(std::move(entry_text));
+    } else {
+      mojom::ConversationEntryPtr entry = mojom::ConversationEntry::New();
+      entry->id = statement.ColumnInt64(0);
+      entry->date = DeserializeTime(statement.ColumnInt64(1));
+      entry->character_type =
+          static_cast<mojom::CharacterType>(statement.ColumnInt(2));
+      entry->action_type =
+          static_cast<mojom::ActionType>(statement.ColumnInt(3));
+      entry->selected_text = statement.ColumnString(4);
+
+      // Add the text to the new entry
+      entry->texts.emplace_back(std::move(entry_text));
+
+      // Add the new entry to the history
+      history.emplace_back(std::move(entry));
     }
-
-    mojom::ConversationEntryPtr entry = mojom::ConversationEntry::New();
-    entry->id = statement.ColumnInt64(0);
-    entry->date = DeserializeTime(statement.ColumnInt64(1));
-    entry->character_type =
-        static_cast<mojom::CharacterType>(statement.ColumnInt(2));
-    entry->texts.emplace_back(std::move(entry_text));
-
-    history.emplace_back(std::move(entry));
   }
 
   return history;
@@ -178,16 +182,28 @@ int64_t AIChatDatabase::AddConversationEntry(
   }
 
   sql::Statement insert_conversation_entry_statement(GetDB().GetUniqueStatement(
-      "INSERT INTO conversation_entry(id, date, character_type, "
-      "conversation_id) VALUES(1, ?, ?, ?)"));
+      "INSERT INTO conversation_entry(id, date, "
+      "character_type, action_type, selected_text, "
+      "conversation_id) VALUES(NULL, ?, ?, ?, ?, ?)"));
   CHECK(insert_conversation_entry_statement.is_valid());
 
   // ConversationEntry's date should always match first text's date
+  int index = 0;
   insert_conversation_entry_statement.BindTimeDelta(
-      0, SerializeTimeToDelta(entry->texts[0]->date));
+      index++, SerializeTimeToDelta(entry->texts[0]->date));
   insert_conversation_entry_statement.BindInt(
-      1, static_cast<int>(entry->character_type));
-  insert_conversation_entry_statement.BindInt64(2, conversation_id);
+      index++, static_cast<int>(entry->character_type));
+  insert_conversation_entry_statement.BindInt(
+      index++, static_cast<int>(entry->action_type));
+
+  if (entry->selected_text.has_value()) {
+    insert_conversation_entry_statement.BindString(
+        index++, entry->selected_text.value());
+  } else {
+    insert_conversation_entry_statement.BindNull(index++);
+  }
+
+  insert_conversation_entry_statement.BindInt64(index++, conversation_id);
 
   if (!insert_conversation_entry_statement.Run()) {
     DVLOG(0) << "Failed to execute 'conversation_entry' insert statement: "
@@ -318,6 +334,8 @@ bool AIChatDatabase::CreateConversationEntryTable() {
       "id INTEGER PRIMARY KEY,"
       "date INTEGER NOT NULL,"
       "character_type INTEGER NOT NULL,"
+      "action_type INTEGER NOT NULL,"
+      "selected_text TEXT,"
       "conversation_id INTEGER NOT NULL)");
 }
 

@@ -92,11 +92,15 @@ TEST_F(AIChatDatabaseTest, AddConversationEntries) {
   EXPECT_EQ(conversation_id, kConversationId);
 
   // Add conversation entry
-  int64_t entry_id = db_->AddConversationEntry(
-      conversation_id, mojom::ConversationEntry::New(
-                           INT64_C(-1), kFirstTextCreatedAt,
-                           mojom::CharacterType::ASSISTANT, std::move(kTexts)));
-  EXPECT_EQ(entry_id, kConversationEntryId);
+  {
+    int64_t entry_id = db_->AddConversationEntry(
+        conversation_id,
+        mojom::ConversationEntry::New(
+            INT64_C(-1), kFirstTextCreatedAt, mojom::CharacterType::ASSISTANT,
+            mojom::ActionType::UNSPECIFIED, std::nullopt /* selected_text */,
+            std::move(kTexts)));
+    EXPECT_EQ(entry_id, kConversationEntryId);
+  }
 
   // Get conversations
   std::vector<mojom::ConversationPtr> conversations =
@@ -119,14 +123,39 @@ TEST_F(AIChatDatabaseTest, AddConversationEntries) {
             GetInternalValue(kFirstTextCreatedAt));
   EXPECT_EQ(UINT64_C(1), entries[0]->texts.size());
   EXPECT_EQ(entries[0]->texts[0]->text, kFirstResponse);
+  EXPECT_EQ(entries[0]->action_type, mojom::ActionType::UNSPECIFIED);
+  EXPECT_TRUE(entries[0]->selected_text.value().empty());
 
   // Add another text to first entry
   db_->AddConversationEntryText(
       entries[0]->id, mojom::ConversationEntryText::New(
                           UINT64_C(1), kSecondTextCreatedAt, kSecondResponse));
+
   entries = db_->GetConversationEntries(conversation_id);
   EXPECT_EQ(UINT64_C(2), entries[0]->texts.size());
   EXPECT_EQ(entries[0]->texts[1]->text, kSecondResponse);
+
+  // Add another entry
+  {
+    base::Time created_at(base::Time::Now());
+    std::string text("This is a question");
+    std::string selected_text("The brown fox jumps over the lazy dog");
+
+    std::vector<mojom::ConversationEntryTextPtr> texts;
+    texts.emplace_back(mojom::ConversationEntryText::New(1, created_at, text));
+
+    int64_t entry_id = db_->AddConversationEntry(
+        conversation_id,
+        mojom::ConversationEntry::New(
+            INT64_C(-1), created_at, mojom::CharacterType::HUMAN,
+            mojom::ActionType::CASUALIZE, selected_text, std::move(texts)));
+
+    EXPECT_EQ(entry_id, 2);
+  }
+
+  const std::vector<mojom::ConversationEntryPtr>& entries_updated =
+      db_->GetConversationEntries(conversation_id);
+  EXPECT_EQ(UINT64_C(2), entries_updated.size());
 }
 
 }  // namespace ai_chat
