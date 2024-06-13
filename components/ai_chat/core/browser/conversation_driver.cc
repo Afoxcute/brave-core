@@ -1109,8 +1109,6 @@ void ConversationDriver::OnEngineCompletionComplete(
   for (auto& obs : observers_) {
     obs.OnAPIRequestInProgress(IsRequestInProgress());
   }
-
-  // TODO(Service): Persist the last AI Entry
 }
 
 void ConversationDriver::OnSuggestedQuestionsChanged() {
@@ -1193,35 +1191,6 @@ bool ConversationDriver::IsContentAssociationPossible() {
   }
 
   return true;
-}
-
-void ConversationDriver::CreateAndSyncConversation() {
-  if ((chat_history_.size() >= 1) && !conversation_) {
-    auto conversation = mojom::Conversation::New(
-        -1, base::Time::Now(), "A conversation", GetPageURL(), article_text_);
-
-    CHECK(service_);
-
-    service_->SyncConversation(
-        std::move(conversation),
-        base::BindOnce(&ConversationDriver::OnGetConversation,
-                       weak_ptr_factory_.GetWeakPtr()));
-  }
-}
-
-void ConversationDriver::OnGetConversation(
-    std::optional<mojom::ConversationPtr> conversation) {
-  LOG(ERROR) << "OnGetConversation";
-  if (conversation.has_value()) {
-    conversation_ = std::move(conversation.value());
-  }
-}
-
-void ConversationDriver::SyncConversationTurn(mojom::ConversationTurnPtr turn) {
-  CHECK(service_);
-  CHECK(conversation_);
-
-  service_->SyncConversationTurn(conversation_->id, std::move(turn));
 }
 
 void ConversationDriver::GetPremiumStatus(
@@ -1359,14 +1328,5 @@ void ConversationDriver::SendFeedback(
                                   ? std::optional<std::string>(page_url.host())
                                   : std::nullopt,
                               std::move(on_complete));
-}
-
-void ConversationDriver::SetService(AIChatKeyedService* service) {
-  service_ = service;
-
-  // Load
-  service_->GetConversationForGURL(
-      GetPageURL(), base::BindOnce(&ConversationDriver::OnGetConversation,
-                                   weak_ptr_factory_.GetWeakPtr()));
 }
 }  // namespace ai_chat
