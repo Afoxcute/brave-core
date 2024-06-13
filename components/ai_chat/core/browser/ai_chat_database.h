@@ -35,6 +35,9 @@ class AIChatDatabase {
                                mojom::ConversationEntryPtr entry);
   int64_t AddConversationEntryText(int64_t conversation_entry_id,
                                    mojom::ConversationEntryTextPtr entry_text);
+  int64_t AddSearchQuery(int64_t conversation_id,
+                         int64_t conversation_entry_id,
+                         const std::string& query);
   bool DeleteConversation(int64_t conversation_id);
   bool DropAllTables();
 
@@ -44,6 +47,7 @@ class AIChatDatabase {
   bool CreateConversationTable();
   bool CreateConversationEntryTable();
   bool CreateConversationEntryTextTable();
+  bool CreateSearchQueriesTable();
 
   sql::Database db_;
 };

@@ -7,6 +7,7 @@
 
 #include <utility>
 
+#include "base/strings/string_split.h"
 #include "base/time/time.h"
 #include "sql/statement.h"
 #include "sql/transaction.h"
@@ -37,7 +38,7 @@ bool AIChatDatabase::Init(const base::FilePath& db_file_path) {
   }
 
   if (!CreateConversationTable() || !CreateConversationEntryTable() ||
-      !CreateConversationEntryTextTable()) {
+      !CreateConversationEntryTextTable() || !CreateSearchQueriesTable()) {
     DVLOG(0) << "Failure to create tables\n";
     return false;
   }
@@ -77,14 +78,17 @@ std::vector<mojom::ConversationPtr> AIChatDatabase::GetAllConversations() {
 std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
     int64_t conversation_id) {
   sql::Statement statement(GetDB().GetUniqueStatement(
-      "SELECT conversation_entry.*, entry_text.* "
-      "FROM conversation_entry"
-      " JOIN ("
-      " SELECT *"
-      " FROM conversation_entry_text"
-      ") AS entry_text"
-      " ON conversation_entry.id = entry_text.conversation_entry_id"
-      " WHERE conversation_id=?"
+      "SELECT conversation_entry.id, conversation_entry.date, "
+      "conversation_entry.character_type, conversation_entry.action_type, "
+      "conversation_entry.selected_text, text.id, text.date, text.text, "
+      "text.conversation_entry_id, "
+      "GROUP_CONCAT(DISTINCT search_queries.query) AS search_queries"
+      " FROM conversation_entry"
+      " JOIN conversation_entry_text as text"
+      " JOIN search_queries"
+      " ON conversation_entry.id = text.conversation_entry_id"
+      " WHERE conversation_entry.conversation_id=?"
+      " GROUP BY conversation_entry.id, text.id"
       " ORDER BY conversation_entry.date ASC"));
 
   statement.BindInt64(0, conversation_id);
@@ -94,18 +98,18 @@ std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
   while (statement.Step()) {
     mojom::ConversationEntryTextPtr entry_text =
         mojom::ConversationEntryText::New();
-    entry_text->id = statement.ColumnInt64(6);
-    entry_text->date = DeserializeTime(statement.ColumnInt64(7));
-    entry_text->text = statement.ColumnString(8);
-    int64_t conversation_entry_id = statement.ColumnInt64(0);
+    entry_text->id = statement.ColumnInt64(5);
+    entry_text->date = DeserializeTime(statement.ColumnInt64(6));
+    entry_text->text = statement.ColumnString(7);
 
+    // Find if the entry already exists in the history
+    int64_t conversation_entry_id = statement.ColumnInt64(8);
     auto found_entry_iter = base::ranges::find_if(
         history,
         [&conversation_entry_id](const mojom::ConversationEntryPtr& entry) {
           return entry->id == conversation_entry_id;
         });
 
-    // Find if the entry already exists in the history
     if (found_entry_iter != history.end()) {
       found_entry_iter->get()->texts.emplace_back(std::move(entry_text));
     } else {
@@ -118,9 +122,21 @@ std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
           static_cast<mojom::ActionType>(statement.ColumnInt(3));
       entry->selected_text = statement.ColumnString(4);
 
+      // Parse search queries
+      std::string search_queries_col = statement.ColumnString(9);
+      if (!search_queries_col.empty()) {
+        entry->events = std::vector<mojom::ConversationEntryEventPtr>();
+
+        std::vector<std::string> search_queries =
+            base::SplitString(search_queries_col, ",", base::TRIM_WHITESPACE,
+                              base::SPLIT_WANT_NONEMPTY);
+        entry->events->emplace_back(
+            mojom::ConversationEntryEvent::NewSearchQueriesEvent(
+                mojom::SearchQueriesEvent::New(std::move(search_queries))));
+      }
+
       // Add the text to the new entry
       entry->texts.emplace_back(std::move(entry_text));
-
       // Add the new entry to the history
       history.emplace_back(std::move(entry));
     }
@@ -214,7 +230,21 @@ int64_t AIChatDatabase::AddConversationEntry(
   int64_t conversation_entry_row_id = GetDB().GetLastInsertRowId();
 
   for (mojom::ConversationEntryTextPtr& text : entry->texts) {
+    // Add texts
     AddConversationEntryText(conversation_entry_row_id, std::move(text));
+  }
+
+  if (entry->events.has_value()) {
+    for (const mojom::ConversationEntryEventPtr& event : *entry->events) {
+      if (event->is_search_queries_event()) {
+        std::vector<std::string> queries =
+            event->get_search_queries_event()->search_queries;
+        for (const std::string& query : queries) {
+          // Add search queries
+          AddSearchQuery(conversation_id, conversation_entry_row_id, query);
+        }
+      }
+    }
   }
 
   if (!transaction.Commit()) {
@@ -255,6 +285,29 @@ int64_t AIChatDatabase::AddConversationEntryText(
 
   if (!insert_text_statement.Run()) {
     DVLOG(0) << "Failed to execute 'conversation_entry_text' insert statement: "
+             << db_.GetErrorMessage();
+    return INT64_C(-1);
+  }
+
+  return GetDB().GetLastInsertRowId();
+}
+
+int64_t AIChatDatabase::AddSearchQuery(int64_t conversation_id,
+                                       int64_t conversation_entry_id,
+                                       const std::string& query) {
+  sql::Statement insert_search_query_statement(GetDB().GetUniqueStatement(
+      "INSERT INTO search_queries"
+      "(id, query, conversation_id, conversation_entry_id)"
+      "VALUES(NULL, ?, ?, ?)"));
+  CHECK(insert_search_query_statement.is_valid());
+
+  int index = 0;
+  insert_search_query_statement.BindString(index++, query);
+  insert_search_query_statement.BindInt64(index++, conversation_id);
+  insert_search_query_statement.BindInt64(index++, conversation_entry_id);
+
+  if (!insert_search_query_statement.Run()) {
+    DVLOG(0) << "Failed to execute 'search_queries' insert statement: "
              << db_.GetErrorMessage();
     return INT64_C(-1);
   }
@@ -345,6 +398,15 @@ bool AIChatDatabase::CreateConversationEntryTextTable() {
       "id INTEGER PRIMARY KEY,"
       "date INTEGER NOT NULL,"
       "text TEXT NOT NULL,"
+      "conversation_entry_id INTEGER NOT NULL)");
+}
+
+bool AIChatDatabase::CreateSearchQueriesTable() {
+  return GetDB().Execute(
+      "CREATE TABLE IF NOT EXISTS search_queries("
+      "id INTEGER PRIMARY KEY,"
+      "query TEXT NOT NULL,"
+      "conversation_id INTEGER NOT NULL,"
       "conversation_entry_id INTEGER NOT NULL)");
 }
 }  // namespace ai_chat

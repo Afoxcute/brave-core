@@ -58,21 +58,7 @@ void AIChatKeyedService::SyncConversation(mojom::ConversationPtr conversation,
 
 void AIChatKeyedService::SyncConversationTurn(int64_t conversation_id,
                                               mojom::ConversationTurnPtr turn) {
-  std::vector<mojom::ConversationEntryTextPtr> texts;
-  texts.emplace_back(
-      mojom::ConversationEntryText::New(-1, base::Time::Now(), turn->text));
-
-  auto conversation_entry = mojom::ConversationEntry::New(
-      -1, base::Time::Now(), turn->character_type, turn->action_type,
-      turn->selected_text, std::move(texts));
-
-  auto on_added = [](int64_t id) {
-    LOG(ERROR) << "converstaion entry saved at id: " << id << "\n";
-  };
-
-  ai_chat_db_.AsyncCall(&AIChatDatabase::AddConversationEntry)
-      .WithArgs(conversation_id, std::move(conversation_entry))
-      .Then(base::BindOnce(on_added));
+  NOTIMPLEMENTED();
 }
 
 void AIChatKeyedService::GetConversationForGURL(const GURL& gurl,

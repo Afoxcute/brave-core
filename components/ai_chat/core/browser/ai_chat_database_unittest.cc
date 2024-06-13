@@ -32,22 +32,25 @@ class AIChatDatabaseTest : public testing::Test {
 
   void SetUp() override {
     ASSERT_TRUE(temp_directory_.CreateUniqueTempDir());
+    // We take ownership of the path for adhoc inspection of the spitted
+    // db. This is useful to test sql queries. If you do this, make sure to
+    // comment out the base::DeletePathRecursively line.
+    path_ = temp_directory_.Take();
     db_ = std::make_unique<AIChatDatabase>();
     ASSERT_TRUE(db_->Init(db_file_path()));
   }
 
   void TearDown() override {
     db_.reset();
-    ASSERT_TRUE(temp_directory_.Delete());
+    ASSERT_TRUE(base::DeletePathRecursively(path_));
   }
 
-  base::FilePath db_file_path() {
-    return temp_directory_.GetPath().AppendASCII("ai_chat");
-  }
+  base::FilePath db_file_path() { return path_.AppendASCII("ai_chat"); }
 
  protected:
   base::ScopedTempDir temp_directory_;
   std::unique_ptr<AIChatDatabase> db_;
+  base::FilePath path_;
 };
 
 TEST_F(AIChatDatabaseTest, AddConversations) {
@@ -81,64 +84,82 @@ TEST_F(AIChatDatabaseTest, AddConversationEntries) {
   static const base::Time kSecondTextCreatedAt(base::Time::Now() +
                                                base::Minutes(5));
 
-  static std::vector<mojom::ConversationEntryTextPtr> kTexts;
-  kTexts.emplace_back(mojom::ConversationEntryText::New(1, kFirstTextCreatedAt,
-                                                        kFirstResponse));
-
   // Add conversation
   int64_t conversation_id = db_->AddConversation(
       mojom::Conversation::New(kConversationId, kFirstTextCreatedAt,
                                kConversationTitle, kURL, kPageContents));
   EXPECT_EQ(conversation_id, kConversationId);
 
-  // Add conversation entry
+  // Add first conversation entry
   {
+    std::vector<mojom::ConversationEntryTextPtr> texts;
+    texts.emplace_back(mojom::ConversationEntryText::New(1, kFirstTextCreatedAt,
+                                                         kFirstResponse));
+
+    std::vector<std::string> search_queries{"brave", "browser", "web"};
+    std::vector<mojom::ConversationEntryEventPtr> events;
+    events.emplace_back(mojom::ConversationEntryEvent::NewSearchQueriesEvent(
+        mojom::SearchQueriesEvent::New(std::move(search_queries))));
+
     int64_t entry_id = db_->AddConversationEntry(
         conversation_id,
         mojom::ConversationEntry::New(
             INT64_C(-1), kFirstTextCreatedAt, mojom::CharacterType::ASSISTANT,
             mojom::ActionType::UNSPECIFIED, std::nullopt /* selected_text */,
-            std::move(kTexts)));
+            std::move(texts), std::move(events)));
     EXPECT_EQ(entry_id, kConversationEntryId);
   }
 
-  // Get conversations
-  std::vector<mojom::ConversationPtr> conversations =
-      db_->GetAllConversations();
-  EXPECT_FALSE(conversations.empty());
-  EXPECT_EQ(conversations[0]->id, INT64_C(1));
-  EXPECT_EQ(conversations[0]->title, kConversationTitle);
-  EXPECT_EQ(conversations[0]->page_url->spec(), kURL.spec());
-  EXPECT_EQ(conversations[0]->page_contents, kPageContents);
-  // Conversation's date must match first text's date
-  EXPECT_EQ(GetInternalValue(conversations[0]->date),
-            GetInternalValue(kFirstTextCreatedAt));
+  // Get and verify conversations
+  {
+    std::vector<mojom::ConversationPtr> conversations =
+        db_->GetAllConversations();
+    EXPECT_FALSE(conversations.empty());
+    EXPECT_EQ(conversations[0]->id, INT64_C(1));
+    EXPECT_EQ(conversations[0]->title, kConversationTitle);
+    EXPECT_EQ(conversations[0]->page_url->spec(), kURL.spec());
+    EXPECT_EQ(conversations[0]->page_contents, kPageContents);
+    // A conversation is created with the first entry's date
+    EXPECT_EQ(GetInternalValue(conversations[0]->date),
+              GetInternalValue(kFirstTextCreatedAt));
+  }
 
-  // Get conversation entries
-  std::vector<mojom::ConversationEntryPtr> entries =
-      db_->GetConversationEntries(conversation_id);
-  EXPECT_EQ(UINT64_C(1), entries.size());
-  EXPECT_EQ(entries[0]->character_type, mojom::CharacterType::ASSISTANT);
-  EXPECT_EQ(GetInternalValue(entries[0]->date),
-            GetInternalValue(kFirstTextCreatedAt));
-  EXPECT_EQ(UINT64_C(1), entries[0]->texts.size());
-  EXPECT_EQ(entries[0]->texts[0]->text, kFirstResponse);
-  EXPECT_EQ(entries[0]->action_type, mojom::ActionType::UNSPECIFIED);
-  EXPECT_TRUE(entries[0]->selected_text.value().empty());
+  // Get and verify conversation entries
+  {
+    std::vector<mojom::ConversationEntryPtr> entries =
+        db_->GetConversationEntries(conversation_id);
+    EXPECT_EQ(UINT64_C(1), entries.size());
+    EXPECT_EQ(entries[0]->character_type, mojom::CharacterType::ASSISTANT);
+    EXPECT_EQ(GetInternalValue(entries[0]->date),
+              GetInternalValue(kFirstTextCreatedAt));
+    EXPECT_EQ(UINT64_C(1), entries[0]->texts.size());
+    EXPECT_EQ(entries[0]->texts[0]->text, kFirstResponse);
+    EXPECT_EQ(entries[0]->action_type, mojom::ActionType::UNSPECIFIED);
+    EXPECT_TRUE(entries[0]->selected_text.value().empty());
 
-  // Add another text to first entry
+    // Verify search queries
+    EXPECT_TRUE(entries.front()->events.has_value());
+    EXPECT_EQ(UINT64_C(3), entries[0]
+                               ->events.value()[0]
+                               ->get_search_queries_event()
+                               ->search_queries.size());
+  }
+
+  // Add another text to the first entry
   db_->AddConversationEntryText(
-      entries[0]->id, mojom::ConversationEntryText::New(
-                          UINT64_C(1), kSecondTextCreatedAt, kSecondResponse));
+      UINT64_C(1), mojom::ConversationEntryText::New(
+                       UINT64_C(1), kSecondTextCreatedAt, kSecondResponse));
 
-  entries = db_->GetConversationEntries(conversation_id);
-  EXPECT_EQ(UINT64_C(2), entries[0]->texts.size());
-  EXPECT_EQ(entries[0]->texts[1]->text, kSecondResponse);
+  {
+    auto entries = db_->GetConversationEntries(conversation_id);
+    EXPECT_EQ(UINT64_C(2), entries[0]->texts.size());
+    EXPECT_EQ(entries[0]->texts[1]->text, kSecondResponse);
+  }
 
   // Add another entry
   {
     base::Time created_at(base::Time::Now());
-    std::string text("This is a question");
+    std::string text("Is this a question?");
     std::string selected_text("The brown fox jumps over the lazy dog");
 
     std::vector<mojom::ConversationEntryTextPtr> texts;
@@ -148,14 +169,20 @@ TEST_F(AIChatDatabaseTest, AddConversationEntries) {
         conversation_id,
         mojom::ConversationEntry::New(
             INT64_C(-1), created_at, mojom::CharacterType::HUMAN,
-            mojom::ActionType::CASUALIZE, selected_text, std::move(texts)));
+            mojom::ActionType::CASUALIZE, selected_text, std::move(texts),
+            std::nullopt /* search_query */));
 
     EXPECT_EQ(entry_id, 2);
   }
 
-  const std::vector<mojom::ConversationEntryPtr>& entries_updated =
-      db_->GetConversationEntries(conversation_id);
-  EXPECT_EQ(UINT64_C(2), entries_updated.size());
+  // Get and verify conversation entries
+  {
+    const std::vector<mojom::ConversationEntryPtr>& entries =
+        db_->GetConversationEntries(conversation_id);
+    EXPECT_EQ(UINT64_C(2), entries.size());
+    EXPECT_EQ(entries[1]->selected_text.value(),
+              "The brown fox jumps over the lazy dog");
+  }
 }
 
 }  // namespace ai_chat
