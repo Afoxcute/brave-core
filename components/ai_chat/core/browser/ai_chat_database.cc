@@ -95,6 +95,8 @@ std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
 
   std::vector<mojom::ConversationEntryPtr> history;
 
+  int64_t last_conversation_entry_id = -1;
+
   while (statement.Step()) {
     mojom::ConversationEntryTextPtr entry_text =
         mojom::ConversationEntryText::New();
@@ -102,16 +104,11 @@ std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
     entry_text->date = DeserializeTime(statement.ColumnInt64(6));
     entry_text->text = statement.ColumnString(7);
 
-    // Find if the entry already exists in the history
-    int64_t conversation_entry_id = statement.ColumnInt64(8);
-    auto found_entry_iter = base::ranges::find_if(
-        history,
-        [&conversation_entry_id](const mojom::ConversationEntryPtr& entry) {
-          return entry->id == conversation_entry_id;
-        });
+    int64_t current_conversation_id = statement.ColumnInt64(0);
 
-    if (found_entry_iter != history.end()) {
-      found_entry_iter->get()->texts.emplace_back(std::move(entry_text));
+    if (last_conversation_entry_id == current_conversation_id) {
+      // Update the last entry if it is the same conversation entry
+      history.back()->texts.emplace_back(std::move(entry_text));
     } else {
       mojom::ConversationEntryPtr entry = mojom::ConversationEntry::New();
       entry->id = statement.ColumnInt64(0);
@@ -123,12 +120,12 @@ std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
       entry->selected_text = statement.ColumnString(4);
 
       // Parse search queries
-      std::string search_queries_col = statement.ColumnString(9);
-      if (!search_queries_col.empty()) {
+      std::string search_queries_all = statement.ColumnString(9);
+      if (!search_queries_all.empty()) {
         entry->events = std::vector<mojom::ConversationEntryEventPtr>();
 
         std::vector<std::string> search_queries =
-            base::SplitString(search_queries_col, ",", base::TRIM_WHITESPACE,
+            base::SplitString(search_queries_all, ",", base::TRIM_WHITESPACE,
                               base::SPLIT_WANT_NONEMPTY);
         entry->events->emplace_back(
             mojom::ConversationEntryEvent::NewSearchQueriesEvent(
@@ -136,7 +133,11 @@ std::vector<mojom::ConversationEntryPtr> AIChatDatabase::GetConversationEntries(
       }
 
       // Add the text to the new entry
+      entry->texts = std::vector<mojom::ConversationEntryTextPtr>();
       entry->texts.emplace_back(std::move(entry_text));
+
+      last_conversation_entry_id = entry->id;
+
       // Add the new entry to the history
       history.emplace_back(std::move(entry));
     }
