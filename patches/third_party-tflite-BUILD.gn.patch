@@ -1,0 +1,12 @@
+diff --git a/third_party/tflite/BUILD.gn b/third_party/tflite/BUILD.gn
+index fcca2752c7c8ad94cef67210997d0f63a1c33beb..70e1e3552c4cc0f0e96ec1434126a353bd84dc5d 100644
+--- a/third_party/tflite/BUILD.gn
++++ b/third_party/tflite/BUILD.gn
+@@ -201,6 +201,7 @@ tflite_static_library("tflite_builtin_op_resolver") {
+   visibility = [
+     ":tflite_benchmark",
+     "//third_party/mediapipe/*",
++    "//third_party/tflite_support/*",
+   ]
+ 
+   conditional_deps = [ ":tflite" ]
