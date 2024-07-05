@@ -342,7 +342,7 @@ class UserScriptManager {
       return
     }
 
-    guard let webView = tab.webView else {
+    guard let webView = tab.webView?.underlyingWebView else {
       Logger.module.info("Injecting Scripts into a Tab that has no WebView")
       return
     }

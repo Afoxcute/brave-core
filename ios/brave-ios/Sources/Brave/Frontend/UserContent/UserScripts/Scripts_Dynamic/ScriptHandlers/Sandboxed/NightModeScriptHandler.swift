@@ -61,8 +61,8 @@ class NightModeScriptHandler: TabContentScript {
     }
   }
 
-  static func executeScript(for webView: WKWebView, isNightModeEnabled: Bool) {
-    webView.evaluateSafeJavaScript(
+  static func executeScript(for webView: BraveWebView, isNightModeEnabled: Bool) {
+    webView.underlyingWebView?.evaluateSafeJavaScript(
       functionName: "window.__firefox__.NightMode.setEnabled",
       args: [isNightModeEnabled],
       contentWorld: Self.scriptSandbox,
