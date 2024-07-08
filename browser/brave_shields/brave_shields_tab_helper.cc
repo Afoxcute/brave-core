@@ -482,10 +482,7 @@ void BraveShieldsTabHelper::HandleItemAllowedOnce(
   }
 }
 
-<<<<<<< HEAD:browser/brave_shields/brave_shields_tab_helper.cc
-WEB_CONTENTS_USER_DATA_KEY_IMPL(BraveShieldsTabHelper);
-=======
-void BraveShieldsDataController::HandleWebcompatFeatureInvoked(
+void BraveShieldsTabHelper::HandleWebcompatFeatureInvoked(
     ContentSettingsType webcompat_content_settings) {
   if (webcompat_content_settings > ContentSettingsType::BRAVE_WEBCOMPAT_NONE &&
       webcompat_content_settings < ContentSettingsType::BRAVE_WEBCOMPAT_ALL) {
@@ -497,7 +494,7 @@ void BraveShieldsDataController::HandleWebcompatFeatureInvoked(
   }
 }
 
-void BraveShieldsDataController::SetWebcompat(
+void BraveShieldsTabHelper::SetWebcompat(
     ContentSettingsType webcompat_settings_type,
     bool disabled) {
   ControlType control_type = disabled ? ControlType::ALLOW : ControlType::BLOCK;
@@ -508,7 +505,7 @@ void BraveShieldsDataController::SetWebcompat(
 }
 
 base::flat_map<ContentSettingsType, bool>
-BraveShieldsDataController::GetWebcompatSettings() {
+BraveShieldsTabHelper::GetWebcompatSettings() {
   auto* map = GetHostContentSettingsMap(web_contents());
   base::flat_map<ContentSettingsType, bool> result;
   for (auto webcompat_settings_type = ContentSettingsType::BRAVE_WEBCOMPAT_NONE;
@@ -522,7 +519,6 @@ BraveShieldsDataController::GetWebcompatSettings() {
   return result;
 }
 
-WEB_CONTENTS_USER_DATA_KEY_IMPL(BraveShieldsDataController);
->>>>>>> 4b61d7545db (webcompat exceptions user interface):browser/ui/brave_shields_data_controller.cc
+WEB_CONTENTS_USER_DATA_KEY_IMPL(BraveShieldsTabHelper);
 
 }  // namespace brave_shields
