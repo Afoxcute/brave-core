@@ -24,6 +24,7 @@ static_library("common") {
   deps = [
     "//base",
     "//brave/components/brave_shields/adblock:rust_lib",
+    "//brave/components/webcompat:common",
     "//components/content_settings/core/common",
     "//net",
     "//ui/base",
