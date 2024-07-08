@@ -11,7 +11,9 @@ import { reduceAddress } from '../../../utils/reduce-address'
 import Amount from '../../../utils/amount'
 import { getLocale } from '../../../../common/locale'
 import { WalletSelectors } from '../../../common/selectors'
-import { openAssociatedTokenAccountSupportArticleTab } from '../../../utils/routes-utils'
+import {
+  openAssociatedTokenAccountSupportArticleTab //
+} from '../../../utils/routes-utils'
 
 // Hooks
 import { usePendingTransactions } from '../../../common/hooks/use-pending-transaction'
