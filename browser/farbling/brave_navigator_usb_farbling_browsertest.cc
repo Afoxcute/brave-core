@@ -11,6 +11,7 @@
 #include "brave/browser/brave_content_browser_client.h"
 #include "brave/components/brave_shields/content/browser/brave_shields_util.h"
 #include "brave/components/constants/brave_paths.h"
+#include "brave/components/webcompat/features.h"
 #include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/browser.h"
@@ -165,6 +166,11 @@ class TestContentBrowserClient : public BraveContentBrowserClient {
 
 class BraveNavigatorUsbFarblingBrowserTest : public InProcessBrowserTest {
  public:
+  BraveNavigatorUsbFarblingBrowserTest() {
+    scoped_feature_list_.InitAndEnableFeature(
+        webcompat::features::kBraveWebcompatExceptionsService);
+  }
+
   void SetUpOnMainThread() override {
     InProcessBrowserTest::SetUpOnMainThread();
 
@@ -259,6 +265,7 @@ class BraveNavigatorUsbFarblingBrowserTest : public InProcessBrowserTest {
   std::unique_ptr<TestContentBrowserClient> browser_content_client_;
   device::FakeUsbDeviceManager device_manager_;
   device::mojom::UsbDeviceInfoPtr fake_device_info_;
+  base::test::ScopedFeatureList scoped_feature_list_;
 };
 
 IN_PROC_BROWSER_TEST_F(BraveNavigatorUsbFarblingBrowserTest,

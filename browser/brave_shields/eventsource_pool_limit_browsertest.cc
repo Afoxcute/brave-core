@@ -9,6 +9,7 @@
 #include "base/path_service.h"
 #include "brave/components/brave_shields/content/browser/brave_shields_util.h"
 #include "brave/components/constants/brave_paths.h"
+#include "brave/components/webcompat/features.h"
 #include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/browser.h"
@@ -93,7 +94,10 @@ constexpr char kEventSourceCloseInSwScript[] = R"(
 
 class EventSourcePoolLimitBrowserTest : public InProcessBrowserTest {
  public:
-  EventSourcePoolLimitBrowserTest() = default;
+  EventSourcePoolLimitBrowserTest() {
+    scoped_feature_list_.InitAndEnableFeature(
+        webcompat::features::kBraveWebcompatExceptionsService);
+  }
 
   void SetUpOnMainThread() override {
     InProcessBrowserTest::SetUpOnMainThread();
@@ -204,6 +208,9 @@ class EventSourcePoolLimitBrowserTest : public InProcessBrowserTest {
   content::ContentMockCertVerifier mock_cert_verifier_;
   EmbeddedTestServer https_server_{EmbeddedTestServer::TYPE_HTTPS};
   GURL es_url_;
+
+ private:
+  base::test::ScopedFeatureList scoped_feature_list_;
 };
 
 IN_PROC_BROWSER_TEST_F(EventSourcePoolLimitBrowserTest,
