@@ -214,9 +214,6 @@ BraveSessionCache::BraveSessionCache(ExecutionContext& context)
   CHECK(h.Init(reinterpret_cast<const unsigned char*>(&session_key_),
                sizeof session_key_));
   CHECK(h.Sign(domain, domain_key_, sizeof domain_key_));
-  const uint64_t* fudge = reinterpret_cast<const uint64_t*>(domain_key_);
-  double fudge_factor = 0.99 + ((*fudge / maxUInt64AsDouble) / 100);
-  uint64_t seed = *reinterpret_cast<uint64_t*>(domain_key_);
   settings_client_ = GetContentSettingsClientFor(&context, true);
   if (settings_client_) {
     auto raw_farbling_level = settings_client_->GetBraveFarblingLevel(
@@ -228,12 +225,6 @@ BraveSessionCache::BraveSessionCache(ExecutionContext& context)
             : (raw_farbling_level == BraveFarblingLevel::OFF
                    ? BraveFarblingLevel::OFF
                    : BraveFarblingLevel::BALANCED);
-    if (settings_client_->GetBraveFarblingLevel(
-            ContentSettingsType::BRAVE_WEBCOMPAT_AUDIO) !=
-        BraveFarblingLevel::OFF) {
-      audio_farbling_helper_.emplace(
-          fudge_factor, seed, farbling_level_ == BraveFarblingLevel::MAXIMUM);
-    }
   }
   farbling_enabled_ = true;
 }
@@ -254,8 +245,20 @@ void BraveSessionCache::Init() {
 }
 
 void BraveSessionCache::FarbleAudioChannel(float* dst, size_t count) {
-  if (audio_farbling_helper_)
-    audio_farbling_helper_->FarbleAudioChannel(dst, count);
+  const auto audio_farbling_level = settings_client_->GetBraveFarblingLevel(
+      ContentSettingsType::BRAVE_WEBCOMPAT_AUDIO);
+  if (audio_farbling_level == BraveFarblingLevel::OFF) {
+    return;
+  }
+  if (!audio_farbling_helper_) {
+    const uint64_t* fudge = reinterpret_cast<const uint64_t*>(domain_key_);
+    double fudge_factor = 0.99 + ((*fudge / maxUInt64AsDouble) / 100);
+    uint64_t seed = *reinterpret_cast<uint64_t*>(domain_key_);
+    audio_farbling_helper_.emplace(
+        fudge_factor, seed,
+        audio_farbling_level == BraveFarblingLevel::MAXIMUM);
+  }
+  audio_farbling_helper_->FarbleAudioChannel(dst, count);
 }
 
 void BraveSessionCache::PerturbPixels(const unsigned char* data, size_t size) {
