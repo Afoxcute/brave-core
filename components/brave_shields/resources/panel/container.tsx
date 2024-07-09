@@ -49,7 +49,7 @@ function Container () {
     if (viewType === ViewType.FingerprintList) {
       treeListElement = <ToggleList
           webcompatSettings={ siteSettings?.webcompatSettings }
-          totalBlockedTitle={'Fingerprinting protections'}
+          totalBlockedTitle={getLocale('braveShieldsFingerprintingProtectionsAppliedLabel')}
       />
     }
   }
