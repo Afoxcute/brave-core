@@ -44,6 +44,21 @@ function generateWebcompatEntries (invokedWebcompatList: Number[] | undefined) :
   return raw;
 }
 
+function countActiveProtections (
+  webcompatSettings: Map<ContentSettingsType, boolean>,
+  invokedWebcompatList: number[] | undefined) {
+  if (invokedWebcompatList === undefined) {
+    return 0;
+  }
+  let count = 0;
+  for (const invokedItem of invokedWebcompatList) {
+    if (webcompatSettings[invokedItem] === false) {
+      count++;
+    }
+  }
+  return count;
+}
+
 function groupByOrigin (data: Url[]) {
   const map: Map<string, string[]> = new Map()
 
@@ -181,13 +196,19 @@ function TreeList (props: Props) {
 export function ToggleList (props: { webcompatSettings: Map<ContentSettingsType, boolean>, totalBlockedTitle: string }) {
   const { siteBlockInfo } = React.useContext(DataContext)
   const invokedWebcompatList = siteBlockInfo?.invokedWebcompatList;
+  const activeProtectionCountSpan = document.getElementById("active-protection-count");
+  const [count, setCount] = React.useState(countActiveProtections(props.webcompatSettings, invokedWebcompatList));
   const handleWebcompatToggle = (feature: ContentSettingsType, isEnabled: boolean) => {
     getPanelBrowserAPI().dataHandler.setWebcompat(feature, !isEnabled);
+    setCount(count + (isEnabled ? 1 : -1));
+    if (activeProtectionCountSpan) {
+      activeProtectionCountSpan.innerText = count.toString();
+    }
   };
   const entries = generateWebcompatEntries(invokedWebcompatList);
   return (<SidePanel>
     <ScriptsInfo>
-      <span>{invokedWebcompatList?.length ?? 0}</span>
+      <span id='active-protection-count'>{count}</span>
       <span>{props.totalBlockedTitle}</span>
     </ScriptsInfo>
     <ToggleListContainer>
