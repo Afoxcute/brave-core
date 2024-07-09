@@ -142,6 +142,7 @@ export const ToggleListContainer = styled.div`
   grid-template-columns: 24px 1fr 40px;
   grid-gap: 10px;
   align-items: center;
+  margin-top: 8px;
   margin-bottom: 8px;
 
   .col-2,

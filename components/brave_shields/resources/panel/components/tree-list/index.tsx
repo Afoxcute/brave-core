@@ -178,7 +178,7 @@ function TreeList (props: Props) {
   )
 }
 
-export function ToggleList (props: {webcompatSettings: Map<ContentSettingsType, boolean>, totalBlockedTitle: string}) {
+export function ToggleList (props: { webcompatSettings: Map<ContentSettingsType, boolean>, totalBlockedTitle: string }) {
   const { siteBlockInfo } = React.useContext(DataContext)
   const invokedWebcompatList = siteBlockInfo?.invokedWebcompatList;
   const handleWebcompatToggle = (feature: ContentSettingsType, isEnabled: boolean) => {
@@ -190,20 +190,20 @@ export function ToggleList (props: {webcompatSettings: Map<ContentSettingsType, 
       <span>{invokedWebcompatList?.length ?? 0}</span>
       <span>{props.totalBlockedTitle}</span>
     </ScriptsInfo>
-      <ToggleListContainer>
-{entries.map(([name, value] : [string, number]) => (
-     <label key={name}>
-       <span>{name}</span>
-       <Toggle
-         onChange={(isEnabled: boolean) => handleWebcompatToggle(value, isEnabled)}
-         isOn={props.webcompatSettings[value] !== true}
-         size='sm'
-         accessibleLabel={name}
-         disabled={false}
-       />
-     </label>
-   ))}
- </ToggleListContainer>
+    <ToggleListContainer>
+      {entries.map(([name, value]: [string, number]) => (
+        <label key={name}>
+          <span>{name}</span>
+          <Toggle
+            onChange={(isEnabled: boolean) => handleWebcompatToggle(value, isEnabled)}
+            isOn={props.webcompatSettings[value] !== true}
+            size='sm'
+            accessibleLabel={name}
+            disabled={false}
+          />
+        </label>
+      ))}
+    </ToggleListContainer>
   </SidePanel>)
 }
 
