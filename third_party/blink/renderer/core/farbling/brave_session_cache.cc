@@ -61,8 +61,9 @@ blink::WebContentSettingsClient* GetContentSettingsClientFor(
     ExecutionContext* context,
     bool require_filled_content_settings_rules) {
   blink::WebContentSettingsClient* settings = nullptr;
-  if (!context)
+  if (!context) {
     return settings;
+  }
   // Avoid blocking fingerprinting in WebUI, extensions, etc.
   const String protocol = context->GetSecurityOrigin()->Protocol();
   if (protocol == url::kAboutScheme || protocol == "chrome-extension" ||
@@ -104,9 +105,10 @@ BraveFarblingLevel GetBraveFarblingLevelFor(
     ContentSettingsType webcompat_settings_type,
     BraveFarblingLevel default_value) {
   BraveFarblingLevel value = default_value;
-  if (context)
+  if (context) {
     value = brave::BraveSessionCache::From(*context).GetBraveFarblingLevel(
         webcompat_settings_type);
+  }
   return value;
 }
 
@@ -119,16 +121,19 @@ bool AllowFingerprinting(ExecutionContext* context,
 
 bool AllowFontFamily(ExecutionContext* context,
                      const AtomicString& family_name) {
-  if (!context)
+  if (!context) {
     return true;
+  }
 
   auto* settings = brave::GetContentSettingsClientFor(context, true);
-  if (!settings)
+  if (!settings) {
     return true;
+  }
 
   if (!brave::BraveSessionCache::From(*context).AllowFontFamily(settings,
-                                                                family_name))
+                                                                family_name)) {
     return false;
+  }
 
   return true;
 }
@@ -181,24 +186,29 @@ BraveSessionCache::BraveSessionCache(ExecutionContext& context)
   scoped_refptr<const blink::SecurityOrigin> origin;
   if (auto* window = blink::DynamicTo<blink::LocalDOMWindow>(context)) {
     auto* frame = window->GetFrame();
-    if (!frame)
+    if (!frame) {
       frame = window->GetDisconnectedFrame();
-    if (frame)
+    }
+    if (frame) {
       origin = frame->Tree().Top().GetSecurityContext()->GetSecurityOrigin();
+    }
   } else {
     origin = context.GetSecurityContext().GetSecurityOrigin();
   }
-  if (!origin || origin->IsOpaque())
+  if (!origin || origin->IsOpaque()) {
     return;
+  }
   const auto host = origin->Host();
-  if (host.IsNull() || host.empty())
+  if (host.IsNull() || host.empty()) {
     return;
+  }
   const std::string domain =
       blink::network_utils::GetDomainAndRegistry(
           host, blink::network_utils::kIncludePrivateRegistries)
           .Utf8();
-  if (domain.empty())
+  if (domain.empty()) {
     return;
+  }
 
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
   base::StringToUint64(
@@ -263,8 +273,9 @@ void BraveSessionCache::Init() {
 }
 
 void BraveSessionCache::FarbleAudioChannel(float* dst, size_t count) {
-  if (audio_farbling_helper_)
+  if (audio_farbling_helper_) {
     audio_farbling_helper_->FarbleAudioChannel(dst, count);
+  }
 }
 
 void BraveSessionCache::PerturbPixels(const unsigned char* data, size_t size) {
@@ -277,8 +288,9 @@ void BraveSessionCache::PerturbPixels(const unsigned char* data, size_t size) {
 
 void BraveSessionCache::PerturbPixelsInternal(const unsigned char* data,
                                               size_t size) {
-  if (!data || size == 0)
+  if (!data || size == 0) {
     return;
+  }
 
   uint8_t* pixels = const_cast<uint8_t*>(data);
   // This needs to be type size_t because we pass it to std::string_view
@@ -306,8 +318,9 @@ void BraveSessionCache::PerturbPixelsInternal(const unsigned char* data,
   for (int i = 0; i < 32; i++) {
     uint8_t bit = canvas_key[i];
     for (int j = 0; j < 16; j++) {
-      if (j % 8 == 0)
+      if (j % 8 == 0) {
         bit = canvas_key[i];
+      }
       channel = v % 3;
       pixel_index = 4 * (v % pixel_count) + channel;
       pixels[pixel_index] = pixels[pixel_index] ^ (bit & 0x1);
@@ -342,8 +355,9 @@ WTF::String BraveSessionCache::FarbledUserAgent(WTF::String real_user_agent) {
   WTF::StringBuilder result;
   result.Append(real_user_agent);
   int extra = prng() % kFarbledUserAgentMaxExtraSpaces;
-  for (int i = 0; i < extra; i++)
+  for (int i = 0; i < extra; i++) {
     result.Append(" ");
+  }
   return result.ToString();
 }
 
@@ -379,8 +393,9 @@ bool BraveSessionCache::AllowFontFamily(
     case BraveFarblingLevel::BALANCED:
     case BraveFarblingLevel::MAXIMUM: {
       if (AllowFontByFamilyName(family_name,
-                                blink::DefaultLanguage().GetString().Left(2)))
+                                blink::DefaultLanguage().GetString().Left(2))) {
         return true;
+      }
       if (IsFontAllowedForFarbling(family_name)) {
         FarblingPRNG prng = MakePseudoRandomGenerator();
         prng.discard(family_name.Impl()->GetHash() % 16);
