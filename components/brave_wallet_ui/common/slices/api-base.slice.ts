@@ -78,7 +78,10 @@ export function createWalletApiBase() {
       'PendingSignMessageErrors',
       'MeldFiatCurrencies',
       'MeldCryptoCurrencies',
-      'DefaultCountryCode'
+      'DefaultCountryCode',
+      'MeldCountries',
+      'MeldServiceProviders',
+      'MeldCryptoQuotes'
     ],
     endpoints: ({ mutation, query }) => ({})
   })
