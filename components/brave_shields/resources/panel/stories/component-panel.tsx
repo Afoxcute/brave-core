@@ -63,7 +63,8 @@ export default {
           allowedJsList: LIST_JS,
           httpRedirectsList: [],
           fingerprintsList: [],
-          faviconUrl: { url: 'https://brave.com/static-assets/images/brave-favicon.png' }
+          faviconUrl: { url: 'https://brave.com/static-assets/images/brave-favicon.png' },
+          invokedWebcompatList: []
         },
         siteSettings: {
           adBlockMode: AdBlockMode.ALLOW,
