@@ -71,7 +71,8 @@ export default {
           cookieBlockMode: CookieBlockMode.ALLOW,
           httpsUpgradeMode: HttpsUpgradeMode.DISABLED_MODE,
           isNoscriptEnabled: false,
-          isForgetFirstPartyStorageEnabled: false
+          isForgetFirstPartyStorageEnabled: false,
+          webcompatSettings: {}
         },
         viewType: ViewType.Main
       }
