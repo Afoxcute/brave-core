@@ -498,9 +498,10 @@ void BraveShieldsTabHelper::SetWebcompat(
     ContentSettingsType webcompat_settings_type,
     bool disabled) {
   ControlType control_type = disabled ? ControlType::ALLOW : ControlType::BLOCK;
+  const GURL& current_site_url = GetCurrentSiteURL();
   brave_shields::SetWebcompatFeatureSetting(
       GetHostContentSettingsMap(web_contents()), webcompat_settings_type,
-      control_type, GetCurrentSiteURL(), g_browser_process->local_state());
+      control_type, current_site_url, g_browser_process->local_state());
   ReloadWebContents();
 }
 
