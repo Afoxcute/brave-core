@@ -494,27 +494,27 @@ void BraveShieldsTabHelper::HandleWebcompatFeatureInvoked(
   }
 }
 
-void BraveShieldsTabHelper::SetWebcompat(
+void BraveShieldsTabHelper::SetWebcompatEnabled(
     ContentSettingsType webcompat_settings_type,
-    bool disabled) {
-  ControlType control_type = disabled ? ControlType::ALLOW : ControlType::BLOCK;
-  const GURL& current_site_url = GetCurrentSiteURL();
+    bool enabled) {
+  ControlType control_type = enabled ? ControlType::BLOCK : ControlType::ALLOW;
   brave_shields::SetWebcompatFeatureSetting(
       GetHostContentSettingsMap(web_contents()), webcompat_settings_type,
-      control_type, current_site_url, g_browser_process->local_state());
+      control_type, GetCurrentSiteURL(), g_browser_process->local_state());
   ReloadWebContents();
 }
 
 base::flat_map<ContentSettingsType, bool>
 BraveShieldsTabHelper::GetWebcompatSettings() {
   auto* map = GetHostContentSettingsMap(web_contents());
+  const GURL& current_site_url = GetCurrentSiteURL();
   base::flat_map<ContentSettingsType, bool> result;
   for (auto webcompat_settings_type = ContentSettingsType::BRAVE_WEBCOMPAT_NONE;
        webcompat_settings_type != ContentSettingsType::BRAVE_WEBCOMPAT_ALL;
        webcompat_settings_type = static_cast<ContentSettingsType>(
            static_cast<int32_t>(webcompat_settings_type) + 1)) {
     const auto setting = brave_shields::GetWebcompatFeatureSetting(
-        map, webcompat_settings_type, GetCurrentSiteURL());
+        map, webcompat_settings_type, current_site_url);
     result[webcompat_settings_type] = setting == ControlType::ALLOW;
   }
   return result;

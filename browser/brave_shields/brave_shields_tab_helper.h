@@ -82,7 +82,8 @@ class BraveShieldsTabHelper
   void SetForgetFirstPartyStorageEnabled(bool is_enabled);
   void AllowScriptsOnce(const std::vector<std::string>& origins);
   void BlockAllowedScripts(const std::vector<std::string>& origins);
-  void SetWebcompat(ContentSettingsType webcompat_settings_type, bool disabled);
+  void SetWebcompatEnabled(ContentSettingsType webcompat_settings_type,
+                           bool enabled);
   base::flat_map<ContentSettingsType, bool> GetWebcompatSettings();
 
   void AddObserver(Observer* obs);

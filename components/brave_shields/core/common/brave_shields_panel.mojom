@@ -49,9 +49,9 @@ interface DataHandler {
   UpdateFavicon();
   AllowScriptsOnce(array<string> origins);
   BlockAllowedScripts(array<string> origins);
-  SetWebcompat(
+  SetWebcompatEnabled(
     content_settings.mojom.ContentSettingsType webcompat_settings_type,
-    bool disable);
+    bool enable);
 };
 
 struct SiteBlockInfo {
