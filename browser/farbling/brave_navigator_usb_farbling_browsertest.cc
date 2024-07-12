@@ -317,10 +317,10 @@ IN_PROC_BROWSER_TEST_F(BraveNavigatorUsbFarblingBrowserTest,
 
   // Reload once more with farbling at default but enable a webcompat exception.
   SetFingerprintingDefault(domain_b);
-  brave_shields::SetWebcompatFeatureSetting(
+  brave_shields::SetWebcompatEnabled(
       content_settings(),
       ContentSettingsType::BRAVE_WEBCOMPAT_USB_DEVICE_SERIAL_NUMBER,
-      ControlType::ALLOW, GURL(url_b), nullptr);
+      true, GURL(url_b), nullptr);
 
   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url_b));
 

@@ -139,9 +139,9 @@ IN_PROC_BROWSER_TEST_F(BraveSpeechSynthesisFarblingBrowserTest, FarbleVoices) {
 
   // Farbling level: default, but webcompat exception enabled
   SetFingerprintingDefault(domain_z);
-  brave_shields::SetWebcompatFeatureSetting(
+  brave_shields::SetWebcompatEnabled(
       content_settings(), ContentSettingsType::BRAVE_WEBCOMPAT_SPEECH_SYNTHESIS,
-      ControlType::ALLOW, embedded_test_server()->GetURL(domain_z, "/"),
+      true, embedded_test_server()->GetURL(domain_z, "/"),
       nullptr);
   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url_z));
   std::string off_voices_z2 =

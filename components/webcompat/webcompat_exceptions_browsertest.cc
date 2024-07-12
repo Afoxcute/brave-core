@@ -147,7 +147,7 @@ IN_PROC_BROWSER_TEST_F(WebcompatExceptionsBrowserTest, RemoteSettingsTest) {
     // Check the default setting
     const auto observed_setting_default =
         map->GetContentSetting(GURL("https://a.test"), GURL(), test_case.type);
-    EXPECT_EQ(observed_setting_default, CONTENT_SETTING_ASK);
+    EXPECT_EQ(observed_setting_default, CONTENT_SETTING_BLOCK);
 
     // Add a rule and then reload the page.
     webcompat_exceptions_service->AddRuleForTesting(pattern, test_case.name);
@@ -161,19 +161,19 @@ IN_PROC_BROWSER_TEST_F(WebcompatExceptionsBrowserTest, RemoteSettingsTest) {
     // Check that the remote setting doesn't leak to another domain
     const auto observed_setting_cross_site =
         map->GetContentSetting(GURL("https://b.test"), GURL(), test_case.type);
-    EXPECT_EQ(observed_setting_cross_site, CONTENT_SETTING_ASK);
+    EXPECT_EQ(observed_setting_cross_site, CONTENT_SETTING_BLOCK);
 
     // Check that manual setting can override the remote setting
-    brave_shields::SetWebcompatFeatureSetting(map, test_case.type,
-                                              ControlType::BLOCK,
+    brave_shields::SetWebcompatEnabled(map, test_case.type,
+                                              false,
                                               GURL("https://a.test"), nullptr);
     const auto observed_setting_override1 =
         map->GetContentSetting(GURL("https://a.test"), GURL(), test_case.type);
     EXPECT_EQ(observed_setting_override1, CONTENT_SETTING_BLOCK);
 
     // Check that manual setting can override the remote setting
-    brave_shields::SetWebcompatFeatureSetting(map, test_case.type,
-                                              ControlType::ALLOW,
+    brave_shields::SetWebcompatEnabled(map, test_case.type,
+                                              true,
                                               GURL("https://b.test"), nullptr);
     const auto observed_setting_override2 =
         map->GetContentSetting(GURL("https://b.test"), GURL(), test_case.type);

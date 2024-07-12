@@ -162,9 +162,9 @@ IN_PROC_BROWSER_TEST_F(BraveWebGLFarblingBrowserTest,
     // Farbling level: default, but webcompat exception enabled
     // Get the actual WebGL2 parameter values.
     SetFingerprintingDefault(domain);
-    brave_shields::SetWebcompatFeatureSetting(
+    brave_shields::SetWebcompatEnabled(
         content_settings(), ContentSettingsType::BRAVE_WEBCOMPAT_WEBGL,
-        ControlType::ALLOW, url, nullptr);
+        true, url, nullptr);
     ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url));
     std::vector<int64_t> real_values2 =
         SplitStringAsInts(EvalJs(contents(), kTitleScript).ExtractString());

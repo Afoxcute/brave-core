@@ -147,9 +147,9 @@ IN_PROC_BROWSER_TEST_F(BraveNavigatorPluginsFarblingBrowserTest,
   // Farbling level: default, but webcompat exception enabled
   // get real length of navigator.plugins
   SetFingerprintingDefault();
-  brave_shields::SetWebcompatFeatureSetting(
+  brave_shields::SetWebcompatEnabled(
       content_settings(), ContentSettingsType::BRAVE_WEBCOMPAT_PLUGINS,
-      ControlType::ALLOW, farbling_url(), nullptr);
+      true, farbling_url(), nullptr);
   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), farbling_url()));
   int off_length2 =
       content::EvalJs(contents(), kPluginsLengthScript).ExtractInt();

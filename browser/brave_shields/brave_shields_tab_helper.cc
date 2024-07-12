@@ -497,10 +497,9 @@ void BraveShieldsTabHelper::HandleWebcompatFeatureInvoked(
 void BraveShieldsTabHelper::SetWebcompatEnabled(
     ContentSettingsType webcompat_settings_type,
     bool enabled) {
-  ControlType control_type = enabled ? ControlType::BLOCK : ControlType::ALLOW;
-  brave_shields::SetWebcompatFeatureSetting(
+  brave_shields::SetWebcompatEnabled(
       GetHostContentSettingsMap(web_contents()), webcompat_settings_type,
-      control_type, GetCurrentSiteURL(), g_browser_process->local_state());
+      enabled, GetCurrentSiteURL(), g_browser_process->local_state());
   ReloadWebContents();
 }
 
@@ -513,9 +512,9 @@ BraveShieldsTabHelper::GetWebcompatSettings() {
        webcompat_settings_type != ContentSettingsType::BRAVE_WEBCOMPAT_ALL;
        webcompat_settings_type = static_cast<ContentSettingsType>(
            static_cast<int32_t>(webcompat_settings_type) + 1)) {
-    const auto setting = brave_shields::GetWebcompatFeatureSetting(
+    const bool enabled = brave_shields::IsWebcompatEnabled(
         map, webcompat_settings_type, current_site_url);
-    result[webcompat_settings_type] = setting == ControlType::ALLOW;
+    result[webcompat_settings_type] = enabled;
   }
   return result;
 }
