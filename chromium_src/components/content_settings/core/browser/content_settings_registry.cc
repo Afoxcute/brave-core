@@ -310,10 +310,10 @@ void ContentSettingsRegistry::BraveInit() {
     const auto match = kSettingsNames.find(settings_type);
     if (match != kSettingsNames.end()) {
       Register(
-          settings_type, match->second, CONTENT_SETTING_ASK,
+          settings_type, match->second, CONTENT_SETTING_BLOCK,
           WebsiteSettingsInfo::UNSYNCABLE, /*allowlisted_schemes=*/{},
           /*valid_settings=*/
-          {CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK, CONTENT_SETTING_ASK},
+          {CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
           WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
           WebsiteSettingsRegistry::DESKTOP |
               WebsiteSettingsRegistry::PLATFORM_ANDROID,
