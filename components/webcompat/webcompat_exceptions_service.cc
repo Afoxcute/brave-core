@@ -109,6 +109,7 @@ bool WebcompatExceptionsService::AddRuleForTesting(
 void WebcompatExceptionsService::AddRules(
     const base::Value::List& include_strings,
     const base::Value::Dict& rule_dict) {
+  base::AutoLock lock(lock_);
   const base::Value* exceptions = rule_dict.Find(kExceptions);
   if (exceptions->is_list()) {
     for (const base::Value& include_string : include_strings) {
