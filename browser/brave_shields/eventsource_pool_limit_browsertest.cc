@@ -365,9 +365,8 @@ IN_PROC_BROWSER_TEST_F(EventSourcePoolLimitBrowserTest,
   // Enable webcompat exception.
   brave_shields::SetWebcompatEnabled(
       content_settings(),
-      ContentSettingsType::BRAVE_WEBCOMPAT_EVENT_SOURCE_POOL,
-      true, https_server_.GetURL("a.com", "/"),
-      nullptr);
+      ContentSettingsType::BRAVE_WEBCOMPAT_EVENT_SOURCE_POOL, true,
+      https_server_.GetURL("a.com", "/"), nullptr);
 
   auto* a_com_rfh = ui_test_utils::NavigateToURLWithDisposition(
       browser(), url, WindowOpenDisposition::NEW_FOREGROUND_TAB,

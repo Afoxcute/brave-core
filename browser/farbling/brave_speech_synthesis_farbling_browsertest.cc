@@ -141,8 +141,7 @@ IN_PROC_BROWSER_TEST_F(BraveSpeechSynthesisFarblingBrowserTest, FarbleVoices) {
   SetFingerprintingDefault(domain_z);
   brave_shields::SetWebcompatEnabled(
       content_settings(), ContentSettingsType::BRAVE_WEBCOMPAT_SPEECH_SYNTHESIS,
-      true, embedded_test_server()->GetURL(domain_z, "/"),
-      nullptr);
+      true, embedded_test_server()->GetURL(domain_z, "/"), nullptr);
   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), url_z));
   std::string off_voices_z2 =
       EvalJs(web_contents(), kTitleScript).ExtractString();

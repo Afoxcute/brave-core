@@ -6,6 +6,7 @@
 #ifndef BRAVE_BROWSER_BRAVE_SHIELDS_BRAVE_SHIELDS_TAB_HELPER_H_
 #define BRAVE_BROWSER_BRAVE_SHIELDS_BRAVE_SHIELDS_TAB_HELPER_H_
 
+#include <set>
 #include <string>
 #include <vector>
 

@@ -75,8 +75,8 @@ class BraveNavigatorHardwareConcurrencyFarblingBrowserTest
   void EnableWebcompatException() {
     brave_shields::SetWebcompatEnabled(
         content_settings(),
-        ContentSettingsType::BRAVE_WEBCOMPAT_HARDWARE_CONCURRENCY,
-        true, top_level_page_url_, nullptr);
+        ContentSettingsType::BRAVE_WEBCOMPAT_HARDWARE_CONCURRENCY, true,
+        top_level_page_url_, nullptr);
   }
 
   content::WebContents* contents() {

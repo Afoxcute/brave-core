@@ -215,7 +215,7 @@ BraveSessionCache::BraveSessionCache(ExecutionContext& context)
                sizeof session_key_));
   CHECK(h.Sign(domain, domain_key_, sizeof domain_key_));
   settings_client_ = GetContentSettingsClientFor(&context, true);
-  if (settings_client_ !== nullptr) {
+  if (settings_client_ != nullptr) {
     auto raw_farbling_level = settings_client_->GetBraveFarblingLevel(
         ContentSettingsType::BRAVE_WEBCOMPAT_NONE);
     farbling_level_ =

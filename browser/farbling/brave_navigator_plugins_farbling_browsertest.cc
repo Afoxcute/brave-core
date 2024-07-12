@@ -148,8 +148,8 @@ IN_PROC_BROWSER_TEST_F(BraveNavigatorPluginsFarblingBrowserTest,
   // get real length of navigator.plugins
   SetFingerprintingDefault();
   brave_shields::SetWebcompatEnabled(
-      content_settings(), ContentSettingsType::BRAVE_WEBCOMPAT_PLUGINS,
-      true, farbling_url(), nullptr);
+      content_settings(), ContentSettingsType::BRAVE_WEBCOMPAT_PLUGINS, true,
+      farbling_url(), nullptr);
   ASSERT_TRUE(ui_test_utils::NavigateToURL(browser(), farbling_url()));
   int off_length2 =
       content::EvalJs(contents(), kPluginsLengthScript).ExtractInt();
