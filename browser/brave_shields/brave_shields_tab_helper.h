@@ -6,10 +6,10 @@
 #ifndef BRAVE_BROWSER_BRAVE_SHIELDS_BRAVE_SHIELDS_TAB_HELPER_H_
 #define BRAVE_BROWSER_BRAVE_SHIELDS_BRAVE_SHIELDS_TAB_HELPER_H_
 
-#include <set>
 #include <string>
 #include <vector>
 
+#include "base/containers/flat_set.h"
 #include "base/observer_list.h"
 #include "base/observer_list_types.h"
 #include "base/scoped_observation.h"
@@ -120,7 +120,7 @@ class BraveShieldsTabHelper
   std::set<GURL> resource_list_blocked_js_;
   std::set<GURL> resource_list_allowed_once_js_;
   std::set<GURL> resource_list_blocked_fingerprints_;
-  std::set<ContentSettingsType> webcompat_features_invoked_;
+  base::flat_set<ContentSettingsType> webcompat_features_invoked_;
   base::ScopedObservation<HostContentSettingsMap, content_settings::Observer>
       observation_{this};
 
