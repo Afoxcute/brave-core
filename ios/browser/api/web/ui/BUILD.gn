@@ -27,6 +27,11 @@ source_set("ui") {
     "//ios/web/web_state/ui:wk_web_view_configuration_provider_header",
     "//ios/web/webui",
     "//ui/base",
+
+    "//ios/web/public/js_messaging:frame_id",
+    "//ios/web/public/js_messaging:gcrweb",
+    "//ios/web/public/js_messaging:util_scripts",
+    "//ios/web/public/js_messaging:gcrweb_js",
   ]
 
   frameworks = [
