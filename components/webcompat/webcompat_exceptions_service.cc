@@ -77,12 +77,10 @@ void WebcompatExceptionsService::LoadWebcompatExceptions(
   base::FilePath txt_file_path =
       install_dir.AppendASCII(WEBCOMPAT_EXCEPTIONS_JSON_FILE_VERSION)
           .AppendASCII(WEBCOMPAT_EXCEPTIONS_JSON_FILE);
-  base::ThreadPool::PostTaskAndReplyWithResult(
+  base::ThreadPool::PostTask(
       FROM_HERE, {base::MayBlock()},
-      base::BindOnce(&brave_component_updater::GetDATFileAsString,
-                     txt_file_path),
-      base::BindOnce(&WebcompatExceptionsService::OnJsonFileDataReady,
-                     weak_factory_.GetWeakPtr()));
+      base::BindOnce(&WebcompatExceptionsService::ReadAndParseJsonRules,
+                     weak_factory_.GetWeakPtr(), txt_file_path));
 }
 
 bool WebcompatExceptionsService::AddRule(const ContentSettingsPattern& pattern,
@@ -142,8 +140,7 @@ WebcompatExceptionsService::GetPatterns(ContentSettingsType webcompat_type) {
                                                  : it->second;
 }
 
-void WebcompatExceptionsService::OnJsonFileDataReady(
-    const std::string& contents) {
+void WebcompatExceptionsService::ParseJsonRules(const std::string& contents) {
   if (contents.empty()) {
     // We don't have the file yet.
     return;
@@ -179,6 +176,13 @@ void WebcompatExceptionsService::OnJsonFileDataReady(
                   << WEBCOMPAT_EXCEPTIONS_JSON_FILE;
     }
   }
+}
+
+void WebcompatExceptionsService::ReadAndParseJsonRules(
+    const base::FilePath& txt_file_path) {
+  const auto raw_contents =
+      brave_component_updater::GetDATFileAsString(txt_file_path);
+  ParseJsonRules(raw_contents);
 }
 
 // implementation of LocalDataFilesObserver

@@ -39,7 +39,7 @@ class WebcompatExceptionsService
                         const std::string& manifest) override;
 
   ~WebcompatExceptionsService() override;
-  void OnJsonFileDataReady(const std::string& contents);
+  void ParseJsonRules(const std::string& contents);
   static WebcompatExceptionsService* CreateInstance(
       brave_component_updater::LocalDataFilesService* local_data_files_service);
   static WebcompatExceptionsService* GetInstance();
@@ -55,6 +55,7 @@ class WebcompatExceptionsService
   bool AddRule(const ContentSettingsPattern& pattern,
                const std::string& exception_string);
   void ClearRules();
+  void ReadAndParseJsonRules(const base::FilePath& txt_file_path);
   base::flat_map<ContentSettingsType, std::vector<ContentSettingsPattern>>
       patterns_by_webcompat_type_;
   // Use around accesses to |patterns_by_webcompat_type_| to guarantee
