@@ -47,12 +47,10 @@ import {
 } from '../../../../../../utils/datetime-utils'
 import { getBalance } from '../../../../../../utils/balance-utils'
 import {
+  getPriceIdForToken,
   getTokenPriceAmountFromRegistry,
-  getTokenPriceFromRegistry //
+  getTokenPriceFromRegistry
 } from '../../../../../../utils/pricing-utils'
-import {
-  getPriceIdForToken //
-} from '../../../../../../utils/api-utils'
 
 // Components
 import {

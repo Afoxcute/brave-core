@@ -27,10 +27,6 @@ export type HardwareVendor =
 export { Origin } from 'gen/url/mojom/origin.mojom.m.js'
 export { TimeDelta }
 
-export type RefreshOpts = {
-  skipBalancesRefresh?: boolean
-}
-
 export type HardwareWalletResponseCodeType =
   | 'deviceNotConnected'
   | 'deviceBusy'
@@ -203,7 +199,6 @@ export interface WalletState {
   isWalletCreated: boolean
   isWalletLocked: boolean
   addUserAssetError: boolean
-  activeOrigin: BraveWallet.OriginInfo
   allowedNewWalletAccountTypeNetworkIds: EntityId[]
   passwordAttempts: number
   assetAutoDiscoveryCompleted: boolean
@@ -242,6 +237,13 @@ export interface WalletPageState {
 export interface WalletPanelState {
   wallet: WalletState
   panel: PanelState
+  ui: UIState
+}
+
+export interface ReduxStoreState {
+  wallet: WalletState
+  panel?: PanelState
+  page?: PageState
   ui: UIState
 }
 

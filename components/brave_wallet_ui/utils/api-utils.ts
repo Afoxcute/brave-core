@@ -4,55 +4,20 @@
 // you can obtain one at https://mozilla.org/MPL/2.0/.
 
 import { mapLimit } from 'async'
-import { Store } from 'redux'
+import { ThunkDispatch } from '@reduxjs/toolkit'
 
 // constants
-import { SKIP_PRICE_LOOKUP_COINGECKO_ID } from '../common/constants/magics'
 
 // actions
-import { PanelActions } from '../panel/actions'
+import { PanelActions } from '../common/slices/panel.slice'
+import { navigateTo } from '../panel/async/wallet_panel_thunks'
 
 // types
 import type WalletApiProxy from '../common/wallet_api_proxy'
 import {
   BraveWallet,
-  SupportedCoinTypes,
-  SupportedTestNetworks,
-  externalWalletProviders
-} from '../constants/types'
-
-export const getPriceIdForToken = (
-  token: Pick<
-    BraveWallet.BlockchainToken,
-    'contractAddress' | 'symbol' | 'coingeckoId' | 'chainId'
-  >
-) => {
-  if (token?.coingeckoId) {
-    return token.coingeckoId.toLowerCase()
-  }
-
-  // Skip price of testnet tokens other than goerli-eth
-  if (SupportedTestNetworks.includes(token.chainId)) {
-    // Goerli ETH has a real-world value
-    if (
-      token.chainId === BraveWallet.GOERLI_CHAIN_ID &&
-      !token.contractAddress
-    ) {
-      return 'goerli-eth' // coingecko id
-    }
-    return SKIP_PRICE_LOOKUP_COINGECKO_ID
-  }
-
-  const isEthereumNetwork = token.chainId === BraveWallet.MAINNET_CHAIN_ID
-  if (
-    (isEthereumNetwork || externalWalletProviders.includes(token.chainId)) &&
-    token.contractAddress
-  ) {
-    return token.contractAddress.toLowerCase()
-  }
-
-  return token.symbol.toLowerCase()
-}
+  ReduxStoreState,
+  SupportedCoinTypes} from '../constants/types'
 
 export function handleEndpointError(
   endpointName: string,
@@ -103,17 +68,21 @@ export async function getVisibleNetworksList(api: WalletApiProxy) {
 
 export function navigateToConnectHardwareWallet(
   panelHandler: BraveWallet.PanelHandlerRemote,
-  store: Pick<Store, 'dispatch' | 'getState'>
+  store: {
+    dispatch: ThunkDispatch<any, any, any>
+    getState: () => unknown
+  }
 ) {
   panelHandler.setCloseOnDeactivate(false)
 
-  const selectedPanel: string | undefined =
-    store.getState()?.panel?.selectedPanel
+  const selectedPanel: string | undefined = (
+    store.getState() as ReduxStoreState
+  )?.panel?.selectedPanel
 
   if (selectedPanel === 'connectHardwareWallet') {
     return
   }
 
-  store.dispatch(PanelActions.navigateTo('connectHardwareWallet'))
+  store.dispatch(navigateTo('connectHardwareWallet'))
   store.dispatch(PanelActions.setHardwareWalletInteractionError(undefined))
 }
