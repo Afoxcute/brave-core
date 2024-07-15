@@ -10,7 +10,7 @@
 #include <string>
 
 #include "base/no_destructor.h"
-#include "brave/components/webcompat/features.h"
+#include "brave/components/webcompat/core/common/features.h"
 #include "components/content_settings/core/common/content_settings.h"
 #include "components/content_settings/core/common/content_settings_pattern.h"
 #include "url/gurl.h"
