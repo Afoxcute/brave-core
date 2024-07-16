@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef BRAVE_COMPONENTS_AI_CHAT_CORE_BROWSER_AI_CHAT_KEYED_SERVICE_H_
-#define BRAVE_COMPONENTS_AI_CHAT_CORE_BROWSER_AI_CHAT_KEYED_SERVICE_H_
+#ifndef BRAVE_COMPONENTS_AI_CHAT_CORE_BROWSER_AI_CHAT_SERVICE_H_
+#define BRAVE_COMPONENTS_AI_CHAT_CORE_BROWSER_AI_CHAT_SERVICE_H_
 
 #include "base/files/file_path.h"
 #include "base/memory/scoped_refptr.h"
@@ -24,12 +24,12 @@ class BrowserContext;
 namespace ai_chat {
 using ConversationCallback = base::OnceCallback<void(
     std::optional<mojom::ConversationPtr> conversation)>;
-class AIChatKeyedService : public KeyedService {
+class AIChatService : public KeyedService {
  public:
-  explicit AIChatKeyedService(content::BrowserContext* context);
-  ~AIChatKeyedService() override;
-  AIChatKeyedService(const AIChatKeyedService&) = delete;
-  AIChatKeyedService& operator=(const AIChatKeyedService&) = delete;
+  explicit AIChatService(content::BrowserContext* context);
+  ~AIChatService() override;
+  AIChatService(const AIChatService&) = delete;
+  AIChatService& operator=(const AIChatService&) = delete;
 
   void SyncConversation(mojom::ConversationPtr conversation,
                         ConversationCallback callback);
@@ -49,9 +49,9 @@ class AIChatKeyedService : public KeyedService {
 
   base::SequenceBound<AIChatDatabase> ai_chat_db_;
 
-  base::WeakPtrFactory<AIChatKeyedService> weak_ptr_factory_{this};
+  base::WeakPtrFactory<AIChatService> weak_ptr_factory_{this};
 };
 
 }  // namespace ai_chat
 
-#endif  // BRAVE_COMPONENTS_AI_CHAT_CORE_BROWSER_AI_CHAT_KEYED_SERVICE_H_
+#endif  // BRAVE_COMPONENTS_AI_CHAT_CORE_BROWSER_AI_CHAT_SERVICE_H_

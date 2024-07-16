@@ -16,7 +16,7 @@ class NoDestructor;
 }  // namespace base
 
 namespace ai_chat {
-class AIChatKeyedService;
+class AIChatService;
 
 class AIChatServiceFactory : public BrowserContextKeyedServiceFactory {
  public:
@@ -24,7 +24,7 @@ class AIChatServiceFactory : public BrowserContextKeyedServiceFactory {
   AIChatServiceFactory& operator=(const AIChatServiceFactory&) = delete;
 
   static AIChatServiceFactory* GetInstance();
-  static AIChatKeyedService* GetForBrowserContext(
+  static AIChatService* GetForBrowserContext(
       content::BrowserContext* context);
 
  private:

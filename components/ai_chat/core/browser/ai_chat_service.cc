@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "brave/components/ai_chat/core/browser/ai_chat_keyed_service.h"
+#include "brave/components/ai_chat/core/browser/ai_chat_service.h"
 
 #include <utility>
 #include <vector>
@@ -17,7 +17,7 @@ constexpr base::FilePath::StringPieceType kBaseDirName =
     FILE_PATH_LITERAL("AIChat");
 }  // namespace
 
-AIChatKeyedService::AIChatKeyedService(content::BrowserContext* context)
+AIChatService::AIChatService(content::BrowserContext* context)
     : base_dir_(context->GetPath().Append(kBaseDirName)) {
   ai_chat_db_ = base::SequenceBound<AIChatDatabase>(GetTaskRunner());
 
@@ -29,9 +29,9 @@ AIChatKeyedService::AIChatKeyedService(content::BrowserContext* context)
       .Then(std::move(on_response));
 }
 
-AIChatKeyedService::~AIChatKeyedService() = default;
+AIChatService::~AIChatService() = default;
 
-base::SequencedTaskRunner* AIChatKeyedService::GetTaskRunner() {
+base::SequencedTaskRunner* AIChatService::GetTaskRunner() {
   if (!task_runner_) {
     task_runner_ = base::ThreadPool::CreateSequencedTaskRunner(
         {base::MayBlock(), base::WithBaseSyncPrimitives(),
@@ -42,7 +42,7 @@ base::SequencedTaskRunner* AIChatKeyedService::GetTaskRunner() {
   return task_runner_.get();
 }
 
-void AIChatKeyedService::SyncConversation(mojom::ConversationPtr conversation,
+void AIChatService::SyncConversation(mojom::ConversationPtr conversation,
                                           ConversationCallback callback) {
   auto on_added = [](mojom::ConversationPtr conversation,
                      ConversationCallback callback, int64_t id) {
@@ -56,12 +56,12 @@ void AIChatKeyedService::SyncConversation(mojom::ConversationPtr conversation,
                            std::move(callback)));
 }
 
-void AIChatKeyedService::SyncConversationTurn(int64_t conversation_id,
+void AIChatService::SyncConversationTurn(int64_t conversation_id,
                                               mojom::ConversationTurnPtr turn) {
   NOTIMPLEMENTED();
 }
 
-void AIChatKeyedService::GetConversationForGURL(const GURL& gurl,
+void AIChatService::GetConversationForGURL(const GURL& gurl,
                                                 ConversationCallback callback) {
   auto on_get = [](const GURL& gurl, ConversationCallback callback,
                    std::vector<mojom::ConversationPtr> conversations) {
@@ -80,7 +80,7 @@ void AIChatKeyedService::GetConversationForGURL(const GURL& gurl,
       .Then(base::BindOnce(on_get, gurl, std::move(callback)));
 }
 
-void AIChatKeyedService::Shutdown() {
+void AIChatService::Shutdown() {
   task_runner_.reset();
 }
 
