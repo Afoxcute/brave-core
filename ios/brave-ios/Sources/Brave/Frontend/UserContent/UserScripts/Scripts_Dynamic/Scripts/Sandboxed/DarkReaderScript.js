@@ -1,0 +1,1 @@
+/Users/brandon/Documents/Code/brave-browser/src/brave/node_modules/darkreader/darkreader.js
