@@ -369,6 +369,28 @@ void CreativeSetConversions::PurgeExpired(ResultCallback callback) const {
   RunTransaction(std::move(transaction), std::move(callback));
 }
 
+void CreativeSetConversions::PurgeAllBetween(
+    mojom::DBTransactionInfo* transaction,
+    base::Time from_time,
+    base::Time to_time) const {
+  CHECK(transaction);
+
+  mojom::DBCommandInfoPtr command = mojom::DBCommandInfo::New();
+  command->type = mojom::DBCommandInfo::Type::EXECUTE;
+  command->sql = base::ReplaceStringPlaceholders(
+      R"(
+          DELETE FROM
+            $1
+          WHERE
+              (expire_at - observation_window * 86400 * 1000000)
+            BETWEEN $2 AND $3;)",
+      {GetTableName(),
+       base::NumberToString(ToChromeTimestampFromTime(from_time)),
+       base::NumberToString(ToChromeTimestampFromTime(to_time))},
+      nullptr);
+  transaction->commands.push_back(std::move(command));
+}
+
 std::string CreativeSetConversions::GetTableName() const {
   return kTableName;
 }

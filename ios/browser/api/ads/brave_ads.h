@@ -145,6 +145,8 @@ OBJC_EXPORT
            advertiserId:(NSString*)advertiserId
                 segment:(NSString*)segment;
 
+- (void)deleteBrowsingData:(void (^)(BOOL success))completion;
+
 #pragma mark - Ads client notifier
 
 // See `components/brave_ads/core/public/client/ads_client_notifier.h`.

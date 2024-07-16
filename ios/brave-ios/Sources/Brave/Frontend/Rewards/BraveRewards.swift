@@ -192,6 +192,14 @@ public class BraveRewards: PreferencesObserver {
     }
   }
 
+  // MARK: - Browsing data
+
+  /// Delete browsing data.
+  func deleteBrowsingData() {
+    if !ads.isServiceRunning() { return }
+    ads.deleteBrowsingData { _ in }
+  }
+
   // MARK: - Reporting
 
   /// Report that a tab with a given id was updated

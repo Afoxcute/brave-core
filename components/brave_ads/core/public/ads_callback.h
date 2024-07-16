@@ -38,6 +38,8 @@ using GetDiagnosticsCallback =
 using PurgeOrphanedAdEventsForTypeCallback =
     base::OnceCallback<void(bool success)>;
 
+using DeleteBrowsingDataCallback = base::OnceCallback<void(bool success)>;
+
 }  // namespace brave_ads
 
 #endif  // BRAVE_COMPONENTS_BRAVE_ADS_CORE_PUBLIC_ADS_CALLBACK_H_

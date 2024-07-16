@@ -15,6 +15,7 @@
 #include "base/files/file_util.h"
 #include "base/files/important_file_writer.h"
 #include "base/functional/bind.h"
+#include "base/functional/callback_forward.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/notreached.h"
@@ -66,6 +67,7 @@
 #include "net/base/network_change_notifier.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/mojom/url_response_head.mojom.h"
+#include "sql/database.h"
 #if !BUILDFLAG(IS_ANDROID)
 #include "chrome/browser/fullscreen.h"
 #include "chrome/browser/ui/browser.h"
@@ -96,6 +98,8 @@
 namespace brave_ads {
 
 namespace {
+
+constexpr char kBraveAdsDatabaseFilename[] = "database.sqlite";
 
 constexpr int kMaximumNumberOfTimesToRetryNetworkRequests = 1;
 
@@ -159,6 +163,15 @@ bool DeletePathOnFileTaskRunner(const base::FilePath& path) {
   }
 
   return base::DeleteFile(path);
+}
+
+bool DeleteBrowsingDataOnFileTaskRunner(const base::FilePath& base_path,
+                                        bool user_has_joined_brave_rewards) {
+  return user_has_joined_brave_rewards
+             ? base::DeleteFile(base_path.AppendASCII(
+                   data::resource::kDeprecatedClientStateFilename))
+             : sql::Database::Delete(
+                   base_path.AppendASCII(kBraveAdsDatabaseFilename));
 }
 
 net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotationTag() {
@@ -356,7 +369,8 @@ bool AdsServiceImpl::CanStartBatAdsService() const {
 }
 
 void AdsServiceImpl::MaybeStartBatAdsService() {
-  if (IsBatAdsServiceBound() || !CanStartBatAdsService()) {
+  if (IsBatAdsServiceBound() || !CanStartBatAdsService() ||
+      g_browser_process->IsShuttingDown()) {
     return;
   }
 
@@ -446,7 +460,7 @@ void AdsServiceImpl::InitializeDatabase() {
   CHECK(!database_);
 
   database_ = base::SequenceBound<Database>(
-      file_task_runner_, base_path_.AppendASCII("database.sqlite"));
+      file_task_runner_, base_path_.AppendASCII(kBraveAdsDatabaseFilename));
 }
 
 void AdsServiceImpl::InitializeRewardsWallet(
@@ -517,7 +531,8 @@ void AdsServiceImpl::InitializeBatAdsCallback(const bool success) {
   }
 }
 
-void AdsServiceImpl::ShutdownAndResetState() {
+void AdsServiceImpl::ShutdownAndResetState(
+    base::OnceClosure shutdown_callback) {
   Shutdown();
 
   VLOG(6) << "Resetting ads state";
@@ -528,13 +543,42 @@ void AdsServiceImpl::ShutdownAndResetState() {
   file_task_runner_->PostTaskAndReplyWithResult(
       FROM_HERE, base::BindOnce(&DeletePathOnFileTaskRunner, base_path_),
       base::BindOnce(&AdsServiceImpl::ShutdownAndResetStateCallback,
-                     AsWeakPtr()));
+                     AsWeakPtr(), std::move(shutdown_callback)));
 }
 
-void AdsServiceImpl::ShutdownAndResetStateCallback(const bool /*success*/) {
+void AdsServiceImpl::ShutdownAndResetStateCallback(
+    base::OnceClosure shutdown_callback,
+    const bool /*success*/) {
   VLOG(6) << "Reset ads state";
 
+  std::move(shutdown_callback).Run();
+
   MaybeStartBatAdsService();
+}
+
+void AdsServiceImpl::DeleteBrowsingDataOnShutdown(base::OnceClosure callback) {
+  VLOG(6) << "Started deleting of browsing data on shutdown";
+
+  Shutdown();
+
+  file_task_runner_->PostTaskAndReplyWithResult(
+      FROM_HERE,
+      base::BindOnce(&DeleteBrowsingDataOnFileTaskRunner, base_path_,
+                     UserHasJoinedBraveRewards()),
+      base::BindOnce(&AdsServiceImpl::DeleteBrowsingDataOnShutdownCallback,
+                     AsWeakPtr(), std::move(callback)));
+}
+
+void AdsServiceImpl::DeleteBrowsingDataOnShutdownCallback(
+    base::OnceClosure callback,
+    const bool success) {
+  if (success) {
+    VLOG(6) << "Successfully deleted browsing data on shutdown";
+  } else {
+    VLOG(6) << "Failed to delete browsing data on shutdown";
+  }
+
+  std::move(callback).Run();
 }
 
 void AdsServiceImpl::SetSysInfo() {
@@ -1301,6 +1345,26 @@ void AdsServiceImpl::GetHistory(const base::Time from_time,
   }
 }
 
+void AdsServiceImpl::DeleteBrowsingData(base::Time from_time,
+                                        base::Time to_time,
+                                        base::OnceClosure callback) {
+  if (g_browser_process->IsShuttingDown()) {
+    return DeleteBrowsingDataOnShutdown(std::move(callback));
+  }
+
+  if (bat_ads_associated_remote_.is_bound()) {
+    bat_ads_associated_remote_->DeleteBrowsingData(
+        from_time, to_time,
+        base::BindOnce(&AdsServiceImpl::DeleteBrowsingDataCallback, AsWeakPtr(),
+                       std::move(callback)));
+  }
+}
+
+void AdsServiceImpl::DeleteBrowsingDataCallback(base::OnceClosure callback,
+                                                bool /*success*/) {
+  std::move(callback).Run();
+}
+
 void AdsServiceImpl::ToggleLikeAd(base::Value::Dict value,
                                   ToggleLikeAdCallback callback) {
   if (bat_ads_associated_remote_.is_bound()) {
@@ -1842,7 +1906,7 @@ void AdsServiceImpl::OnExternalWalletConnected() {
 
 void AdsServiceImpl::OnCompleteReset(const bool success) {
   if (success) {
-    ShutdownAndResetState();
+    ShutdownAndResetState(base::DoNothing());
   }
 }
 

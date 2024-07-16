@@ -158,6 +158,13 @@ class ADS_EXPORT Ads {
       mojom::AdType ad_type,
       PurgeOrphanedAdEventsForTypeCallback callback) = 0;
 
+  // Called to delete browsing data between `from_time` and `to_time` date
+  // range. The callback takes one argument - `bool` is set to `true` if
+  // successful otherwise `false`.
+  virtual void DeleteBrowsingData(base::Time from_time,
+                                  base::Time to_time,
+                                  DeleteBrowsingDataCallback callback) = 0;
+
   // Called to get history filtered by `filter_type` and sorted by `sort_type`
   // between `from_time` and `to_time` date range. Returns `HistoryItemList`
   // containing info of the obtained history.

@@ -153,6 +153,12 @@ class AdsService : public KeyedService {
                           base::Time to_time,
                           GetHistoryCallback callback) = 0;
 
+  // Called to delete browsing data between `from_time` and `to_time` date
+  // range.
+  virtual void DeleteBrowsingData(base::Time from_time,
+                                  base::Time to_time,
+                                  base::OnceClosure callback) = 0;
+
   // Called to like an advertiser. This is a toggle, so calling it again returns
   // the setting to the neutral state. The callback takes one argument -
   // `base::Value::Dict` containing the current state.

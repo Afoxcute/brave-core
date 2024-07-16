@@ -339,6 +339,26 @@ void ConfirmationQueue::Delete(const std::string& transaction_id,
   RunTransaction(std::move(transaction), std::move(callback));
 }
 
+void ConfirmationQueue::PurgeAllBetween(mojom::DBTransactionInfo* transaction,
+                                        base::Time from_time,
+                                        base::Time to_time) const {
+  CHECK(transaction);
+
+  mojom::DBCommandInfoPtr command = mojom::DBCommandInfo::New();
+  command->type = mojom::DBCommandInfo::Type::EXECUTE;
+  command->sql = base::ReplaceStringPlaceholders(
+      R"(
+          DELETE FROM
+            $1
+          WHERE
+             created_at BETWEEN $2 AND $3;)",
+      {GetTableName(),
+       base::NumberToString(ToChromeTimestampFromTime(from_time)),
+       base::NumberToString(ToChromeTimestampFromTime(to_time))},
+      nullptr);
+  transaction->commands.push_back(std::move(command));
+}
+
 void ConfirmationQueue::Retry(const std::string& transaction_id,
                               ResultCallback callback) const {
   const std::string retry_after =

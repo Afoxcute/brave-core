@@ -48,6 +48,7 @@ class BraveBrowsingDataRemoverDelegate
 #if BUILDFLAG(ENABLE_AI_CHAT)
   void ClearAiChatHistory(base::Time begin_time, base::Time end_time);
 #endif  // BUILDFLAG(ENABLE_AI_CHAT)
+  void DeleteBraveAdsBrowsingData(base::Time from_time, base::Time to_time);
 
   raw_ptr<Profile> profile_ = nullptr;
   base::WeakPtrFactory<BraveBrowsingDataRemoverDelegate> weak_ptr_factory_{

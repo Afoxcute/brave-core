@@ -16,7 +16,9 @@
 
 #define CHROME_BROWSING_DATA_REMOVER_DELEGATE_GET_HISTORY_SUFFIX \
   case TracingDataType::kIPFSCache:                              \
-    return "IPFSCache";
+    return "IPFSCache";                                          \
+  case TracingDataType::kBraveAdsHistory:                        \
+    return "BraveAdsHistory";
 
 #include "src/chrome/browser/browsing_data/chrome_browsing_data_remover_delegate.cc"
 #undef CHROME_BROWSING_DATA_REMOVER_DELEGATE_GET_HISTORY_SUFFIX

@@ -11,14 +11,17 @@
 #include "base/check.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
+#include "base/functional/callback_helpers.h"
 #include "base/ranges/algorithm.h"
 #include "base/time/time.h"
 #include "brave/components/brave_ads/core/internal/client/ads_client_util.h"
 #include "brave/components/brave_ads/core/internal/common/logging_util.h"
-#include "brave/components/brave_ads/core/internal/deprecated/client/client_state_manager_constants.h"
+#include "brave/components/brave_ads/core/internal/common/time/time_formatting_util.h"
 #include "brave/components/brave_ads/core/internal/global_state/global_state.h"
 #include "brave/components/brave_ads/core/internal/history/history_feature.h"
 #include "brave/components/brave_ads/core/internal/targeting/contextual/text_classification/text_classification_feature.h"
+#include "brave/components/brave_ads/core/public/ads_constants.h"
+#include "brave/components/brave_ads/core/public/client/ads_client_callback.h"
 #include "brave/components/brave_ads/core/public/history/history_item_info.h"
 #include "build/build_config.h"  // IWYU pragma: keep
 
@@ -95,7 +98,7 @@ const FlaggedAdList& ClientStateManager::GetFlaggedAds() const {
 void ClientStateManager::LoadState(InitializeCallback callback) {
   BLOG(3, "Loading client state");
 
-  Load(kClientStateFilename,
+  Load(data::resource::kDeprecatedClientStateFilename,
        base::BindOnce(&ClientStateManager::LoadCallback,
                       weak_factory_.GetWeakPtr(), std::move(callback)));
 }
@@ -378,7 +381,155 @@ ClientStateManager::GetTextClassificationProbabilitiesHistory() const {
   return client_.text_classification_probabilities;
 }
 
+void ClientStateManager::DeleteRewardsBrowsingDataBetween(
+    base::Time from_time,
+    base::Time to_time,
+    ResultCallback callback) {
+  BLOG(1,
+       "Start deleting rewards browsing data between "
+           << LongFriendlyDateAndTime(from_time, /*use_sentence_style=*/false)
+           << " and "
+           << LongFriendlyDateAndTime(to_time, /*use_sentence_style=*/false));
+
+  std::vector<HistoryItemInfo> deleted_history_items =
+      DeleteHistoryItemsBetween(from_time, to_time);
+  UpdateFlaggedAds(deleted_history_items);
+  UpdateSavedAds(deleted_history_items);
+  UpdateFilteredAdvertisers();
+  UpdateFilteredCategories();
+
+  DeletePurchaseIntentSignalHistoryBetween(from_time, to_time);
+
+  DeleteAllTextClassificationProbabilities();
+
+  Save(data::resource::kDeprecatedClientStateFilename, client_.ToJson(),
+       base::BindOnce(
+           [](ResultCallback callback, const bool success) {
+             std::move(callback).Run(success);
+
+             if (!success) {
+               // TODO(https://github.com/brave/brave-browser/issues/32066):
+               // Detect potential defects using `DumpWithoutCrashing`.
+               SCOPED_CRASH_KEY_STRING64(
+                   "Issue32066", "failure_reason",
+                   "Failed to save client state when delete browsing data");
+               base::debug::DumpWithoutCrashing();
+
+               return BLOG(0,
+                           "Failed to delete rewards browsing data between the "
+                           "given time range.");
+             }
+             BLOG(1,
+                  "Successfully deleted rewards browsing data between the "
+                  "given time range.");
+           },
+           std::move(callback)));
+}
+
 ///////////////////////////////////////////////////////////////////////////////
+
+std::vector<HistoryItemInfo> ClientStateManager::DeleteHistoryItemsBetween(
+    base::Time from_time,
+    base::Time to_time) {
+  std::vector<HistoryItemInfo> deleted_history_items;
+
+  base::EraseIf(client_.history_items,
+                [from_time, to_time,
+                 &deleted_history_items](const HistoryItemInfo& history_item) {
+                  if (history_item.created_at < from_time ||
+                      history_item.created_at > to_time) {
+                    return false;
+                  }
+                  deleted_history_items.push_back(history_item);
+                  return true;
+                });
+
+  return deleted_history_items;
+}
+
+void ClientStateManager::UpdateFlaggedAds(
+    const std::vector<HistoryItemInfo>& deleted_history_items) {
+  AdPreferencesInfo& ad_preferences = client_.ad_preferences;
+  for (const auto& deleted_item : deleted_history_items) {
+    if (deleted_item.ad_content.is_flagged) {
+      ad_preferences.flagged_ads.erase(
+          base::ranges::remove_if(
+              ad_preferences.flagged_ads,
+              [&deleted_item](const FlaggedAdInfo& flagged_ad) {
+                return flagged_ad.creative_set_id ==
+                       deleted_item.ad_content.creative_set_id;
+              }),
+          ad_preferences.flagged_ads.end());
+    }
+  }
+}
+
+void ClientStateManager::UpdateSavedAds(
+    const std::vector<HistoryItemInfo>& deleted_history_items) {
+  AdPreferencesInfo& ad_preferences = client_.ad_preferences;
+  for (const auto& deleted_item : deleted_history_items) {
+    if (deleted_item.ad_content.is_saved) {
+      ad_preferences.saved_ads.erase(
+          base::ranges::remove_if(
+              ad_preferences.saved_ads,
+              [&deleted_item](const SavedAdInfo& saved_ad) {
+                return saved_ad.creative_instance_id ==
+                       deleted_item.ad_content.creative_instance_id;
+              }),
+          ad_preferences.saved_ads.end());
+    }
+  }
+}
+
+void ClientStateManager::UpdateFilteredAdvertisers() {
+  AdPreferencesInfo& ad_preferences = client_.ad_preferences;
+  ad_preferences.filtered_advertisers.erase(
+      base::ranges::remove_if(
+          ad_preferences.filtered_advertisers,
+          [this](const auto& advertiser) {
+            return base::ranges::all_of(
+                client_.history_items,
+                [&advertiser](const HistoryItemInfo& history_item) {
+                  return history_item.ad_content.advertiser_id != advertiser.id;
+                });
+          }),
+      ad_preferences.filtered_advertisers.end());
+}
+
+void ClientStateManager::UpdateFilteredCategories() {
+  AdPreferencesInfo& ad_preferences = client_.ad_preferences;
+  ad_preferences.filtered_categories.erase(
+      base::ranges::remove_if(
+          ad_preferences.filtered_categories,
+          [this](const auto& category) {
+            return base::ranges::all_of(
+                client_.history_items,
+                [&category](const HistoryItemInfo& history_item) {
+                  return history_item.category_content.category !=
+                         category.name;
+                });
+          }),
+      ad_preferences.filtered_categories.end());
+}
+
+void ClientStateManager::DeletePurchaseIntentSignalHistoryBetween(
+    base::Time from_time,
+    base::Time to_time) {
+  for (auto& [_, history_info_list] : client_.purchase_intent_signal_history) {
+    history_info_list.erase(
+        base::ranges::remove_if(
+            history_info_list,
+            [from_time,
+             to_time](const PurchaseIntentSignalHistoryInfo& history_info) {
+              return history_info.at >= from_time && history_info.at <= to_time;
+            }),
+        history_info_list.end());
+  }
+}
+
+void ClientStateManager::DeleteAllTextClassificationProbabilities() {
+  client_.text_classification_probabilities.clear();
+}
 
 void ClientStateManager::SaveState() {
   if (!is_initialized_) {
@@ -387,11 +538,11 @@ void ClientStateManager::SaveState() {
 
   BLOG(9, "Saving client state");
 
-  Save(kClientStateFilename, client_.ToJson(),
+  Save(data::resource::kDeprecatedClientStateFilename, client_.ToJson(),
        base::BindOnce([](const bool success) {
          if (!success) {
-           // TODO(https://github.com/brave/brave-browser/issues/32066): Detect
-           // potential defects using `DumpWithoutCrashing`.
+           // TODO(https://github.com/brave/brave-browser/issues/32066):
+           // Detect potential defects using `DumpWithoutCrashing`.
            SCOPED_CRASH_KEY_STRING64("Issue32066", "failure_reason",
                                      "Failed to save client state");
            base::debug::DumpWithoutCrashing();

@@ -131,8 +131,12 @@ class AdsServiceImpl final : public AdsService,
   void InitializeBatAds(brave_rewards::mojom::RewardsWalletPtr rewards_wallet);
   void InitializeBatAdsCallback(bool success);
 
-  void ShutdownAndResetState();
-  void ShutdownAndResetStateCallback(bool /*success*/);
+  void ShutdownAndResetState(base::OnceClosure callback);
+  void ShutdownAndResetStateCallback(base::OnceClosure callback, bool success);
+
+  void DeleteBrowsingDataOnShutdown(base::OnceClosure callback);
+  void DeleteBrowsingDataOnShutdownCallback(base::OnceClosure shutdown_callback,
+                                            bool success);
 
   void SetSysInfo();
   void SetBuildChannel();
@@ -257,6 +261,11 @@ class AdsServiceImpl final : public AdsService,
   void GetHistory(base::Time from_time,
                   base::Time to_time,
                   GetHistoryCallback callback) override;
+
+  void DeleteBrowsingData(base::Time from_time,
+                          base::Time to_time,
+                          base::OnceClosure callback) override;
+  void DeleteBrowsingDataCallback(base::OnceClosure callback, bool success);
 
   void ToggleLikeAd(base::Value::Dict value,
                     ToggleLikeAdCallback callback) override;

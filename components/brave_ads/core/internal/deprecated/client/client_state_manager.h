@@ -8,6 +8,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "base/memory/weak_ptr.h"
 #include "brave/components/brave_ads/core/internal/deprecated/client/client_info.h"
@@ -18,6 +19,7 @@
 #include "brave/components/brave_ads/core/internal/targeting/contextual/text_classification/model/text_classification_alias.h"
 #include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
 #include "brave/components/brave_ads/core/public/ads_callback.h"
+#include "brave/components/brave_ads/core/public/client/ads_client_callback.h"
 #include "brave/components/brave_ads/core/public/history/history_item_info.h"
 
 namespace brave_ads {
@@ -74,7 +76,24 @@ class ClientStateManager final {
   const TextClassificationProbabilityList&
   GetTextClassificationProbabilitiesHistory() const;
 
+  void DeleteRewardsBrowsingDataBetween(base::Time from_time,
+                                        base::Time to_time,
+                                        ResultCallback callback);
+
  private:
+  std::vector<HistoryItemInfo> DeleteHistoryItemsBetween(base::Time from_time,
+                                                         base::Time to_time);
+  void UpdateFlaggedAds(
+      const std::vector<HistoryItemInfo>& deleted_history_items);
+  void UpdateSavedAds(
+      const std::vector<HistoryItemInfo>& deleted_history_items);
+  void UpdateFilteredAdvertisers();
+  void UpdateFilteredCategories();
+
+  void DeletePurchaseIntentSignalHistoryBetween(base::Time from_time,
+                                                base::Time to_time);
+  void DeleteAllTextClassificationProbabilities();
+
   void SaveState();
 
   void LoadCallback(InitializeCallback callback,

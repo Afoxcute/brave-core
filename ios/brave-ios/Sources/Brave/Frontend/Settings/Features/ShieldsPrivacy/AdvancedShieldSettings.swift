@@ -88,6 +88,7 @@ import os
   private let p3aUtilities: BraveP3AUtils
   private let deAmpPrefs: DeAmpPrefs
   private let debounceService: DebounceService?
+  private let rewards: BraveRewards?
   private let clearDataCallback: ClearDataCallback
   let tabManager: TabManager
 
@@ -96,6 +97,7 @@ import os
     tabManager: TabManager,
     feedDataSource: FeedDataSource,
     debounceService: DebounceService?,
+    rewards: BraveRewards?,
     braveCore: BraveCoreMain,
     clearDataCallback: @escaping ClearDataCallback
   ) {
@@ -103,6 +105,7 @@ import os
     self.deAmpPrefs = braveCore.deAmpPrefs
     self.debounceService = debounceService
     self.tabManager = tabManager
+    self.rewards = rewards
     self.isP3AEnabled = p3aUtilities.isP3AEnabled
     self.clearDataCallback = clearDataCallback
     self.adBlockAndTrackingPreventionLevel = ShieldPreferences.blockAdsAndTrackingLevel
@@ -232,6 +235,8 @@ import os
 
       // Clearing Tab History should clear Recently Closed
       RecentlyClosed.removeAll()
+
+      self.rewards?.deleteBrowsingData()
     }
 
     await _toggleFolderAccessForBlockCookies(locked: true)

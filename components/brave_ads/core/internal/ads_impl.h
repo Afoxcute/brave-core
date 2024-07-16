@@ -98,6 +98,10 @@ class AdsImpl final : public Ads {
       mojom::AdType ad_type,
       PurgeOrphanedAdEventsForTypeCallback callback) override;
 
+  void DeleteBrowsingData(base::Time from_time,
+                          base::Time to_time,
+                          DeleteBrowsingDataCallback callback) override;
+
   HistoryItemList GetHistory(HistoryFilterType filter_type,
                              HistorySortType sort_type,
                              base::Time from_time,

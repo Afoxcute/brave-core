@@ -210,6 +210,12 @@ void BatAdsImpl::PurgeOrphanedAdEventsForType(
   GetAds()->PurgeOrphanedAdEventsForType(ad_type, std::move(callback));
 }
 
+void BatAdsImpl::DeleteBrowsingData(base::Time from_time,
+                                    base::Time to_time,
+                                    DeleteBrowsingDataCallback callback) {
+  GetAds()->DeleteBrowsingData(from_time, to_time, std::move(callback));
+}
+
 void BatAdsImpl::GetHistory(const base::Time from_time,
                             const base::Time to_time,
                             GetHistoryCallback callback) {

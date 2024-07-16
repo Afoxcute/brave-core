@@ -37,6 +37,10 @@ class ConfirmationQueue final : public TableInterface {
   void DeleteAll(ResultCallback callback) const;
   void Delete(const std::string& transaction_id, ResultCallback callback) const;
 
+  void PurgeAllBetween(mojom::DBTransactionInfo* transaction,
+                       base::Time from_time,
+                       base::Time to_time) const;
+
   void Retry(const std::string& transaction_id, ResultCallback callback) const;
 
   void GetAll(GetConfirmationQueueCallback callback) const;

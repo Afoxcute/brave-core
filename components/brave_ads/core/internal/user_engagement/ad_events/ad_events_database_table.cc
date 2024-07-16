@@ -21,6 +21,7 @@
 #include "brave/components/brave_ads/core/internal/common/logging_util.h"
 #include "brave/components/brave_ads/core/internal/common/time/time_util.h"
 #include "brave/components/brave_ads/core/internal/settings/settings.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-forward.h"
 #include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 
 namespace brave_ads::database::table {
@@ -586,6 +587,26 @@ void AdEvents::PurgeAllOrphaned(ResultCallback callback) const {
   transaction->commands.push_back(std::move(command));
 
   RunTransaction(std::move(transaction), std::move(callback));
+}
+
+void AdEvents::PurgeAllBetween(mojom::DBTransactionInfo* transaction,
+                               base::Time from_time,
+                               base::Time to_time) const {
+  CHECK(transaction);
+
+  mojom::DBCommandInfoPtr command = mojom::DBCommandInfo::New();
+  command->type = mojom::DBCommandInfo::Type::EXECUTE;
+  command->sql = base::ReplaceStringPlaceholders(
+      R"(
+          DELETE FROM
+            $1
+          WHERE
+             created_at BETWEEN $2 AND $3;)",
+      {GetTableName(),
+       base::NumberToString(ToChromeTimestampFromTime(from_time)),
+       base::NumberToString(ToChromeTimestampFromTime(to_time))},
+      nullptr);
+  transaction->commands.push_back(std::move(command));
 }
 
 std::string AdEvents::GetTableName() const {

@@ -95,6 +95,10 @@ class BatAdsImpl : public mojom::BatAds {
       brave_ads::mojom::AdType ad_type,
       PurgeOrphanedAdEventsForTypeCallback callback) override;
 
+  void DeleteBrowsingData(base::Time from_time,
+                          base::Time to_time,
+                          DeleteBrowsingDataCallback callback) override;
+
   void GetHistory(base::Time from_time,
                   base::Time to_time,
                   GetHistoryCallback callback) override;

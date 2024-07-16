@@ -331,7 +331,7 @@ static NSString* const kComponentUpdaterMetadataPrefKey =
 
 - (void)initDatabase {
   databaseQueue = base::ThreadPool::CreateSequencedTaskRunner(
-      {base::MayBlock(), base::TaskPriority::USER_VISIBLE,
+      {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
        base::TaskShutdownBehavior::BLOCK_SHUTDOWN});
   const auto dbPath = base::SysNSStringToUTF8([self adsDatabasePath]);
   adsDatabase = base::SequenceBound<brave_ads::Database>(
@@ -1781,6 +1781,17 @@ static NSString* const kComponentUpdaterMetadataPrefKey =
   ad_content.segment = base::SysNSStringToUTF8(segment);
 
   ads->ToggleDislikeAd(brave_ads::AdContentToValue(ad_content));
+}
+
+- (void)deleteBrowsingData:(void (^)(BOOL success))completion {
+  if (![self isServiceRunning]) {
+    return;
+  }
+
+  ads->DeleteBrowsingData(base::Time(), base::Time::Max(),
+                          base::BindOnce(^(const bool success) {
+                            completion(success);
+                          }));
 }
 
 // TODO(https://github.com/brave/brave-browser/issues/33788): Unify Brave Ads

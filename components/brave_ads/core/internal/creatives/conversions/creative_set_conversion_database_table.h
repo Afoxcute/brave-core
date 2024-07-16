@@ -29,6 +29,10 @@ class CreativeSetConversions final : public TableInterface {
 
   void PurgeExpired(ResultCallback callback) const;
 
+  void PurgeAllBetween(mojom::DBTransactionInfo* transaction,
+                       base::Time from_time,
+                       base::Time to_time) const;
+
   std::string GetTableName() const override;
 
   void Create(mojom::DBTransactionInfo* transaction) override;

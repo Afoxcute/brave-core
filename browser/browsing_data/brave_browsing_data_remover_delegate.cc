@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "brave/browser/brave_ads/ads_service_factory.h"
 #include "brave/browser/brave_news/brave_news_controller_factory.h"
 #include "brave/components/brave_news/browser/brave_news_controller.h"
 #include "brave/components/content_settings/core/browser/brave_content_settings_pref_provider.h"
@@ -53,10 +54,13 @@ void BraveBrowsingDataRemoverDelegate::RemoveEmbedderData(
   if (remove_mask & chrome_browsing_data_remover::DATA_TYPE_CONTENT_SETTINGS)
     ClearShieldsSettings(delete_begin, delete_end);
 
-  // Brave News feed cache
   if (remove_mask & chrome_browsing_data_remover::DATA_TYPE_HISTORY) {
+    // Brave News feed cache
     brave_news::BraveNewsControllerFactory::GetForContext(profile_)
         ->ClearHistory();
+
+    // Brave Ads history data
+    DeleteBraveAdsBrowsingData(delete_begin, delete_end);
   }
 #if BUILDFLAG(ENABLE_AI_CHAT)
   if (remove_mask & chrome_browsing_data_remover::DATA_TYPE_BRAVE_LEO_HISTORY &&
@@ -103,3 +107,11 @@ void BraveBrowsingDataRemoverDelegate::ClearAiChatHistory(base::Time begin_time,
   // It is prepared for future implementation.
 }
 #endif  // BUILDFLAG(ENABLE_AI_CHAT)
+
+void BraveBrowsingDataRemoverDelegate::DeleteBraveAdsBrowsingData(
+    base::Time from_time,
+    base::Time to_time) {
+  brave_ads::AdsServiceFactory::GetForProfile(profile_)->DeleteBrowsingData(
+      from_time, to_time,
+      CreateTaskCompletionClosure(TracingDataType::kBraveAdsHistory));
+}

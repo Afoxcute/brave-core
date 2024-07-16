@@ -461,6 +461,7 @@ extension BrowserViewController: TopToolbarDelegate {
           tabManager: self.tabManager,
           feedDataSource: self.feedDataSource,
           debounceService: DebounceServiceFactory.get(privateMode: false),
+          rewards: self.rewards,
           braveCore: braveCore,
           clearDataCallback: { [weak self] isLoading, isHistoryCleared in
             guard let self else { return }
