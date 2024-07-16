@@ -34,7 +34,6 @@ import {
 import { UISelectors, WalletSelectors } from '../../../../../common/selectors'
 
 // actions
-import { refreshNetworksAndTokens } from '../../../../../common/async/thunks'
 import { WalletPageActions } from '../../../../../page/actions'
 
 // utils
@@ -47,6 +46,7 @@ import {
   useGetNftDiscoveryEnabledStatusQuery,
   useGetSimpleHashSpamNftsQuery,
   useGetUserTokensRegistryQuery,
+  useRefreshNetworksAndTokensMutation,
   useSetNftDiscoveryEnabledMutation
 } from '../../../../../common/slices/api.slice'
 import { useApiProxy } from '../../../../../common/hooks/use-api-proxy'
@@ -142,9 +142,6 @@ export const Nfts = ({
   const assetAutoDiscoveryCompleted = useSafeWalletSelector(
     WalletSelectors.assetAutoDiscoveryCompleted
   )
-  const isRefreshingTokens = useSafeWalletSelector(
-    WalletSelectors.isRefreshingNetworksAndTokens
-  )
   const isPanel = useSafeUISelector(UISelectors.isPanel)
 
   // local-storage
@@ -174,14 +171,15 @@ export const Nfts = ({
   // queries
   const { data: isNftAutoDiscoveryEnabled } =
     useGetNftDiscoveryEnabledStatusQuery()
-  const { data: simpleHashSpamNfts = [], isFetching: isLoadingSpamNfts } =
+  const { data: simpleHashSpamNfts = [], isFetching: isFetchingSpamNfts } =
     useGetSimpleHashSpamNftsQuery(
       selectedTab === 'collected' || !accounts.length ? skipToken : { accounts }
     )
   const { accounts: allAccounts } = useAccountsQuery()
-  const { userTokensRegistry, hiddenNfts, visibleNfts } =
+  const { userTokensRegistry, hiddenNfts, visibleNfts, isFetchingUserTokens } =
     useGetUserTokensRegistryQuery(undefined, {
       selectFromResult: (result) => ({
+        isFetchingUserTokens: result.isFetching,
         userTokensRegistry: result.data,
         visibleNfts: selectAllVisibleUserNFTsFromQueryResult(result),
         hiddenNfts: selectHiddenNftsFromQueryResult(result)
@@ -200,8 +198,12 @@ export const Nfts = ({
 
   // mutations
   const [setNftDiscovery] = useSetNftDiscoveryEnabledMutation()
+  const [refreshNetworksAndTokens] = useRefreshNetworksAndTokensMutation()
 
   // memos & computed
+  const isRefreshingTokens =
+    isFetchingUserTokens || (selectedTab === 'collected' && isFetchingSpamNfts)
+
   const { visibleUserNonSpamNfts, visibleUserMarkedSpamNfts } =
     React.useMemo(() => {
       return groupSpamAndNonSpamNfts(visibleNfts)
@@ -400,7 +402,7 @@ export const Nfts = ({
     (groupNftsByCollection &&
       isFetchingLatestAssetIdsByCollectionNameRegistry) ||
     (selectedTab === 'hidden' &&
-      (isLoadingSpamNfts || !spamTokenBalancesRegistry))
+      (isFetchingSpamNfts || !spamTokenBalancesRegistry))
 
   // methods
   const onSearchValueChange = React.useCallback(
@@ -454,10 +456,6 @@ export const Nfts = ({
     await setNftDiscovery(true)
     hideNftDiscoveryModal()
   }, [hideNftDiscoveryModal, setNftDiscovery])
-
-  const onRefresh = React.useCallback(() => {
-    dispatch(refreshNetworksAndTokens())
-  }, [dispatch])
 
   const onSelectOption = React.useCallback(
     (selectedOption: NftDropdownOption) => {
@@ -552,7 +550,7 @@ export const Nfts = ({
             <AutoDiscoveryEmptyState
               isRefreshingTokens={isRefreshingTokens}
               onImportNft={toggleShowAddNftModal}
-              onRefresh={onRefresh}
+              onRefresh={refreshNetworksAndTokens}
             />
           ) : (
             <NftsEmptyState onImportNft={toggleShowAddNftModal} />
