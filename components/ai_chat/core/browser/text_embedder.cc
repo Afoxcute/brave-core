@@ -22,6 +22,8 @@ using tflite::task::text::CreateTextOpResolver;
 
 namespace ai_chat {
 
+size_t TextEmbedder::g_segment_size_limit_(300);
+
 // static
 std::unique_ptr<TextEmbedder> TextEmbedder::Create(
     const base::FilePath& model_path) {
@@ -128,10 +130,10 @@ std::vector<std::string> TextEmbedder::SplitSegments(const std::string& text) {
   auto segments = base::SplitStringUsingSubstr(
       text, ". ", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
   DVLOG(4) << "Segments: " << segments.size();
-  if (segments.size() > 300) {
+  if (segments.size() > g_segment_size_limit_) {
     std::vector<std::string> new_segments;
     size_t join_size =
-        static_cast<size_t>(std::ceil(segments.size() / 300));
+        static_cast<size_t>(std::ceil(segments.size() / g_segment_size_limit_));
     std::string new_segment = "";
     for (size_t i = 0; i < segments.size(); ++i) {
       new_segment += segments[i];
@@ -178,6 +180,11 @@ absl::Status TextEmbedder::EmbedSegments() {
     embeddings_.push_back(embedding);
   }
   return absl::OkStatus();
+}
+
+// static
+void TextEmbedder::SetSegmentSizeLimitForTesting(size_t limit) {
+  g_segment_size_limit_ = limit;
 }
 
 }  // namespace ai_chat

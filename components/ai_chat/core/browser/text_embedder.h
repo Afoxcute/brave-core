@@ -10,6 +10,7 @@
 
 #include "base/files/file_path.h"
 #include "base/functional/callback.h"
+#include "base/gtest_prod_util.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/types/expected.h"
@@ -35,6 +36,7 @@ class TextEmbedder {
       TopSimilarityCallback callback);
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(TextEmbedderUnitTest, SplitSegments);
   TextEmbedder();
 
   void GetTopSimilarityWithPromptTilContextLimitInternal(
@@ -50,6 +52,8 @@ class TextEmbedder {
 
   absl::Status EmbedSegments();
 
+  static void SetSegmentSizeLimitForTesting(size_t limit);
+  static size_t g_segment_size_limit_;
   size_t text_hash_ = 0;
   std::vector<std::string> segments_;
   std::vector<tflite::task::processor::EmbeddingResult> embeddings_;
