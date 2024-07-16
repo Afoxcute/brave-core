@@ -13,6 +13,7 @@ import os
 import re
 import stat
 
+
 def main():
     args = parse_args()
 
@@ -23,17 +24,17 @@ def main():
         '@APP_DIR@': args.app_dir_name,
         '@APP_PRODUCT@': '',
         '@BRAND_CODE@': '',
-        '@FRAMEWORK_DIR@':
-            f'{args.app_dir_name}/{args.framework_dir_in_app_dir}',
+        '@FRAMEWORK_DIR@': args.app_dir_name + '/' +
+        args.framework_dir_in_app_dir,
         '@SHEBANG_GUARD@': '',
         'GoogleUpdater': 'BraveUpdater',
         'KSProductID': 'CFBundleIdentifier',
         'KSVersion': 'CFBundleShortVersionString',
         '/Library/Google/GoogleSoftwareUpdate/GoogleSoftwareUpdate.bundle/'
-        'Contents/MacOS/ksadmin':
-            r'/Library/Application Support/BraveSoftware/BraveUpdater/Current/'
-            r'BraveUpdater.app/Contents/Helpers/BraveSoftwareUpdate.bundle/'
-            r'Contents/Helpers/ksadmin'
+        'Contents/MacOS/ksadmin': '/Library/Application Support/BraveSoftware'
+        '/BraveUpdater/Current/BraveUpdater.app/'
+        'Contents/Helpers/BraveSoftwareUpdate.bundle/'
+        'Contents/Helpers/ksadmin'
     }
     for key, value in replacements.items():
         assert key in script, key
@@ -49,6 +50,7 @@ def main():
 
     make_executable(args.out_file)
 
+
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('postinstall_template_path')
@@ -57,8 +59,10 @@ def parse_args():
     parser.add_argument('out_file')
     return parser.parse_args()
 
+
 def make_executable(file_path):
     chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
+
 
 if __name__ == '__main__':
     main()

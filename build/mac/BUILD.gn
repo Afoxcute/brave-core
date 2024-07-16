@@ -352,7 +352,7 @@ action("create_pkg") {
 
   args = [
     rebase_path(shell_script, root_build_dir),
-    rebase_path(app_path, root_build_dir)
+    rebase_path(app_path, root_build_dir),
   ]
 
   if (brave_enable_updater) {
@@ -392,12 +392,12 @@ action("postinstall") {
     rebase_path("//chrome/installer/mac/pkg_postinstall.in"),
     brave_exe,
     "Contents/Frameworks/$chrome_product_full_name Framework.framework",
-    rebase_path(output)
+    rebase_path(output),
   ]
 
   inputs = [
     script,
-    "//chrome/installer/mac/pkg_postinstall.in"
+    "//chrome/installer/mac/pkg_postinstall.in",
   ]
 
   outputs = [ output ]
