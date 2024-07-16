@@ -97,6 +97,7 @@ export const makeMockedStoreWithSpy = () => {
 export class MockedWalletApiProxy {
   store = makeMockedStoreWithSpy().store
 
+  activeOrigin: BraveWallet.OriginInfo | undefined = mockOriginInfo
   defaultBaseCurrency: string = 'usd'
   selectedAccountId: BraveWallet.AccountId = mockAccount.accountId
   accountInfos: BraveWallet.AccountInfo[] = [
@@ -376,12 +377,14 @@ export class MockedWalletApiProxy {
       this.defaultBaseCurrency = currency
     },
     getActiveOrigin: async () => {
-      return {
-        originInfo: {
-          originSpec: 'https://brave.com',
-          eTldPlusOne: 'brave.com'
-        }
-      }
+      return this.activeOrigin
+        ? { originInfo: this.activeOrigin }
+        : {
+            originInfo: {
+              originSpec: 'https://brave.com',
+              eTldPlusOne: 'brave.com'
+            }
+          }
     },
     getNetworkForSelectedAccountOnActiveOrigin: async () => {
       return { network: this.selectedNetwork }
