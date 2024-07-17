@@ -159,9 +159,21 @@ export function makeTxServiceObserver(store: Store) {
 }
 
 export function makeBraveWalletServiceObserver(store: Store) {
+  let lastKnownActiveOrigin: BraveWallet.OriginInfo
+
   const braveWalletServiceObserverReceiver =
     new BraveWallet.BraveWalletServiceObserverReceiver({
       onActiveOriginChanged: function (originInfo) {
+        // check that the origin has changed from the stored values
+        // in any way before dispatching the update action
+        if (
+          lastKnownActiveOrigin &&
+          lastKnownActiveOrigin.eTldPlusOne === originInfo.eTldPlusOne &&
+          lastKnownActiveOrigin.originSpec === originInfo.originSpec
+        ) {
+          return
+        }
+        lastKnownActiveOrigin = originInfo
         store.dispatch(walletApi.util.invalidateTags(['ActiveOrigin']))
       },
       onDefaultEthereumWalletChanged: function (defaultWallet) {
