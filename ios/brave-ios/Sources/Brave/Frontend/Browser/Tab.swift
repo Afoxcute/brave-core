@@ -400,8 +400,10 @@ class Tab: NSObject {
     self.id = id
     rewardsId = UInt32.random(in: 1...UInt32.max)
     nightMode = Preferences.General.nightModeEnabled.value
-    _syncTab = tabGeneratorAPI?.createBraveSyncTab(isOffTheRecord: type == .private)
+    // FIXME: Delete sync tab code entirely
+    _syncTab = nil//tabGeneratorAPI?.createBraveSyncTab(isOffTheRecord: type == .private)
 
+    // FIXME: Do we need favicon driver anymore with CWVWebView?
     if let syncTab = _syncTab {
       _faviconDriver = FaviconDriver(webState: syncTab.webState).then {
         $0.setMaximumFaviconImageSize(CGSize(width: 1024, height: 1024))
@@ -417,7 +419,6 @@ class Tab: NSObject {
   weak var navigationDelegate: CWVNavigationDelegate? {
     didSet {
       if let webView = webView {
-        // FIXME: Nav Delegate
         webView.navigationDelegate = navigationDelegate
       }
     }
@@ -468,8 +469,7 @@ class Tab: NSObject {
       // Turning off masking allows the web content to flow outside of the scrollView's frame
       // which allows the content appear beneath the toolbars in the BrowserViewController
       webView.scrollView.layer.masksToBounds = false
-      // FIXME: Nav Delegate
-//      webView.navigationDelegate = navigationDelegate
+      webView.navigationDelegate = navigationDelegate
 
       restore(webView, restorationData: self.sessionData)
 
