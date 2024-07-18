@@ -1,8 +1,8 @@
 diff --git a/ios/chrome/browser/flags/about_flags.mm b/ios/chrome/browser/flags/about_flags.mm
-index 8d12fdd4455d332fbc255ab6275742732ddf3b77..303427bf1c6337d3a5e1f0c6a5ec0de6dbb01943 100644
+index ccccc2eff733af6dce1c4586e3b7c0cc58d1e9bb..9bbaa597f382d095a74d56d555f397bc007deeef 100644
 --- a/ios/chrome/browser/flags/about_flags.mm
 +++ b/ios/chrome/browser/flags/about_flags.mm
-@@ -968,6 +968,7 @@ const FeatureEntry::FeatureVariation
+@@ -964,6 +964,7 @@ const FeatureEntry::FeatureVariation kAutofillVcnEnrollRequestTimeoutOptions[] =
  //
  // When adding a new choice, add it to the end of the list.
  const flags_ui::FeatureEntry kFeatureEntries[] = {
