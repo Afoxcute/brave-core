@@ -159,11 +159,9 @@ std::vector<GURL> BraveShieldsTabHelper::GetFingerprintsList() {
   return fingerprints_list;
 }
 
-std::vector<ContentSettingsType>
-BraveShieldsTabHelper::GetInvokedWebcompatFeaturesList() {
-  std::vector<ContentSettingsType> features_list(
-      webcompat_features_invoked_.begin(), webcompat_features_invoked_.end());
-  return features_list;
+base::flat_set<ContentSettingsType>&
+BraveShieldsTabHelper::GetInvokedWebcompatFeatures() {
+  return webcompat_features_invoked_;
 }
 
 bool BraveShieldsTabHelper::GetBraveShieldsEnabled() {

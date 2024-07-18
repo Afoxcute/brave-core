@@ -220,8 +220,10 @@ void ShieldsPanelDataHandler::UpdateSiteBlockInfo() {
       active_shields_data_controller_->GetBraveShieldsEnabled();
   site_block_info_.is_brave_shields_managed =
       active_shields_data_controller_->IsBraveShieldsManaged();
-  site_block_info_.invoked_webcompat_list =
-      active_shields_data_controller_->GetInvokedWebcompatFeaturesList();
+  const auto& invoked_webcompat_set =
+      active_shields_data_controller_->GetInvokedWebcompatFeatures();
+  site_block_info_.invoked_webcompat_list = std::vector<ContentSettingsType>(
+      invoked_webcompat_set.begin(), invoked_webcompat_set.end());
 
   // This method gets called from various callsites. Constantly updating favicon
   // url will replace the hashed version too. So, we update this once only
