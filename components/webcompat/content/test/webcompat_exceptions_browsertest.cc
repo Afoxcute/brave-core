@@ -149,8 +149,10 @@ IN_PROC_BROWSER_TEST_F(WebcompatExceptionsBrowserTest, RemoteSettingsTest) {
         map->GetContentSetting(GURL("https://a.test"), GURL(), test_case.type);
     EXPECT_EQ(observed_setting_default, CONTENT_SETTING_BLOCK);
 
-    // Add a rule and then reload the page.
-    webcompat_exceptions_service->AddRuleForTesting(pattern, test_case.name);
+    // Create a rule and then reload the page.
+    webcompat::PatternsByWebcompatTypeMap rule_map;
+    rule_map[test_case.type] = std::vector<ContentSettingsPattern>({pattern});
+    webcompat_exceptions_service->SetRules(rule_map);
     NavigateToURL("a.test", "/simple.html");
 
     // Check the remote setting gets used

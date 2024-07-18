@@ -13,6 +13,7 @@
 #include "base/containers/flat_map.h"
 #include "base/files/file_path.h"
 #include "base/synchronization/lock.h"
+#include "base/thread_annotations.h"
 #include "base/values.h"
 #include "brave/components/brave_component_updater/browser/local_data_files_observer.h"
 #include "brave/components/brave_component_updater/browser/local_data_files_service.h"
@@ -22,6 +23,8 @@
 namespace webcompat {
 
 using content_settings::mojom::ContentSettingsType;
+
+using PatternsByWebcompatTypeMap = base::flat_map<ContentSettingsType, std::vector<ContentSettingsPattern>>;
 
 // The WebcompatExceptionsService loads a list of site-specific webcompat
 // exceptions from the Brave Local Data component and provides these exceptions
@@ -39,28 +42,21 @@ class WebcompatExceptionsService
                         const std::string& manifest) override;
 
   ~WebcompatExceptionsService() override;
-  void ParseJsonRules(const std::string& contents);
   static WebcompatExceptionsService* CreateInstance(
       brave_component_updater::LocalDataFilesService* local_data_files_service);
   static WebcompatExceptionsService* GetInstance();
+  // Callable from any thread; needed for functions like
+  // HostContentSettingsMap::GetContentSetting(...)
   const std::vector<ContentSettingsPattern> GetPatterns(
       ContentSettingsType webcompat_type);
-  bool AddRuleForTesting(const ContentSettingsPattern& pattern,
-                         const std::string& exception_string);
+  void SetRules(const PatternsByWebcompatTypeMap& patterns_by_webcompat_type);
 
  private:
   void LoadWebcompatExceptions(const base::FilePath& install_dir);
-  void AddRules(const base::Value::List& include_strings,
-                const base::Value::Dict& rule_dict);
-  bool AddRule(const ContentSettingsPattern& pattern,
-               const std::string& exception_string);
-  void ClearRules();
-  void ReadAndParseJsonRules(const base::FilePath& txt_file_path);
-  base::flat_map<ContentSettingsType, std::vector<ContentSettingsPattern>>
-      patterns_by_webcompat_type_;
   // Use around accesses to |patterns_by_webcompat_type_| to guarantee
   // thread safety.
   base::Lock lock_;
+  PatternsByWebcompatTypeMap patterns_by_webcompat_type_ GUARDED_BY(lock_);
   base::WeakPtrFactory<WebcompatExceptionsService> weak_factory_{this};
 };
 
