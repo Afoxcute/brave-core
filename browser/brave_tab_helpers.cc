@@ -136,9 +136,6 @@ void AttachTabHelpers(content::WebContents* web_contents) {
           return skus::SkusServiceFactory::GetForContext(context);
         },
         context);
-    if (!g_brave_browser_process->process_misc_metrics()) {
-      CHECK_IS_TEST();
-    }
     ai_chat::AIChatTabHelper::CreateForWebContents(
         web_contents,
         g_brave_browser_process->process_misc_metrics()
