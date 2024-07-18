@@ -29,6 +29,7 @@ let didWait = false;
 function check(selector, predicate) {
   const checkSelectorInner = () => {
     let elements = [].slice.call(document.querySelectorAll(selector));
+    console.log('checking ' + elements.length + ' elements');
     return predicate(elements);
   };
 
@@ -89,6 +90,11 @@ const attributes = (expectedAttributes) =>
     if (elements.length === 0)
       return false;
     return elements.every(e => {
+      const attributes = [];
+      for (const attr of e.attributes) {
+        attributes.push(attr.name + ' / ' + attr.value);
+      }
+      console.log('expected' + JSON.stringify(expectedAttributes) + ', got ' + JSON.stringify(attributes));
       return e.attributes.length === expectedAttributes.length && expectedAttributes.every(a => e.hasAttribute(a));
     });
   };
