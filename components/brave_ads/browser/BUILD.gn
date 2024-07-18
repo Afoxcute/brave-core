@@ -12,6 +12,7 @@ static_library("browser") {
     "ad_units/notification_ad/custom_notification_ad_feature.h",
     "ads_service.cc",
     "ads_service.h",
+    "ads_service_delegate.h",
     "ads_service_observer.h",
     "analytics/p2a/p2a.cc",
     "analytics/p2a/p2a.h",
@@ -62,7 +63,6 @@ static_library("browser") {
   sources += [
     "ads_service_impl.cc",
     "ads_service_impl.h",
-    "bat_ads_service_factory.h",
     "device_id/device_id.cc",
     "device_id/device_id.h",
     "tooltips/ads_tooltips_delegate.h",

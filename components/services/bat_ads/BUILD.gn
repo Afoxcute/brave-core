@@ -5,7 +5,7 @@
 
 static_library("lib") {
   visibility = [
-    "//brave/browser/brave_ads/services",
+    "//brave/browser/brave_ads/delegate",
     "//brave/test:*",
     "//chrome/utility:*",
   ]

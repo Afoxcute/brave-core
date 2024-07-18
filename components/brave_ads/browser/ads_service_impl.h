@@ -58,11 +58,12 @@ class SimpleURLLoader;
 
 namespace brave_ads {
 
+class AdsServiceDelegate;
 class AdsTooltipsDelegate;
-class BatAdsServiceFactory;
 class Database;
 class DeviceId;
 struct NewTabPageAdInfo;
+class ResourceComponent;
 
 class AdsServiceImpl final : public AdsService,
                              public bat_ads::mojom::BatAdsClient,
@@ -78,7 +79,8 @@ class AdsServiceImpl final : public AdsService,
           adaptive_captcha_service,
       std::unique_ptr<AdsTooltipsDelegate> ads_tooltips_delegate,
       std::unique_ptr<DeviceId> device_id,
-      std::unique_ptr<BatAdsServiceFactory> bat_ads_service_factory,
+      std::unique_ptr<AdsServiceDelegate> ads_service_delegate,
+      brave_ads::ResourceComponent* resource_component,
       history::HistoryService* history_service,
       brave_rewards::RewardsService* rewards_service);
 
@@ -184,7 +186,6 @@ class AdsServiceImpl final : public AdsService,
   void OpenNewTabWithAd(const std::string& placement_id);
   void OpenNewTabWithAdCallback(std::optional<base::Value::Dict> dict);
   void RetryOpeningNewTabWithAd(const std::string& placement_id);
-  void OpenNewTabWithUrl(const GURL& url);
 
   // TODO(https://github.com/brave/brave-browser/issues/14676) Decouple URL
   // request business logic.
@@ -428,6 +429,9 @@ class AdsServiceImpl final : public AdsService,
 
   const raw_ptr<PrefService> local_state_ = nullptr;  // NOT OWNED
 
+  const raw_ptr<brave_ads::ResourceComponent> resource_component_ =
+      nullptr;  // NOT OWNED
+
   const raw_ptr<history::HistoryService> history_service_ =
       nullptr;  // NOT OWNED
 
@@ -437,7 +441,7 @@ class AdsServiceImpl final : public AdsService,
 
   const std::unique_ptr<DeviceId> device_id_;
 
-  const std::unique_ptr<BatAdsServiceFactory> bat_ads_service_factory_;
+  std::unique_ptr<AdsServiceDelegate> ads_service_delegate_;
 
   const scoped_refptr<base::SequencedTaskRunner> file_task_runner_;
 

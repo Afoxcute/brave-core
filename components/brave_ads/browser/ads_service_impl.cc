@@ -28,12 +28,11 @@
 #include "base/timer/timer.h"
 #include "brave/browser/brave_ads/ad_units/notification_ad/notification_ad_platform_bridge.h"
 #include "brave/browser/brave_ads/application_state/notification_helper/notification_helper.h"
-#include "brave/browser/brave_browser_process.h"
 #include "brave/common/brave_channel_info.h"
 #include "brave/components/brave_ads/browser/ad_units/notification_ad/custom_notification_ad_feature.h"
+#include "brave/components/brave_ads/browser/ads_service_delegate.h"
 #include "brave/components/brave_ads/browser/analytics/p2a/p2a.h"
 #include "brave/components/brave_ads/browser/analytics/p3a/notification_ad.h"
-#include "brave/components/brave_ads/browser/bat_ads_service_factory.h"
 #include "brave/components/brave_ads/browser/component_updater/resource_component.h"
 #include "brave/components/brave_ads/browser/device_id/device_id.h"
 #include "brave/components/brave_ads/browser/reminder/reminder_util.h"
@@ -59,7 +58,6 @@
 #include "brave/components/ntp_background_images/common/pref_names.h"
 #include "brave/components/services/bat_ads/public/interfaces/bat_ads.mojom.h"
 #include "build/build_config.h"  // IWYU pragma: keep
-#include "chrome/browser/browser_process.h"
 #include "chrome/browser/notifications/notification_display_service.h"
 #include "chrome/browser/profiles/profile.h"
 #include "content/public/browser/browser_context.h"
@@ -69,10 +67,6 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #if !BUILDFLAG(IS_ANDROID)
 #include "chrome/browser/fullscreen.h"
-#include "chrome/browser/ui/browser.h"
-#include "chrome/browser/ui/browser_finder.h"
-#include "chrome/browser/ui/browser_navigator.h"
-#include "chrome/browser/ui/browser_navigator_params.h"
 #endif
 #include "brave/components/brave_adaptive_captcha/brave_adaptive_captcha_service.h"
 #include "brave/components/brave_adaptive_captcha/pref_names.h"
@@ -88,10 +82,6 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "brave/browser/notifications/brave_notification_platform_bridge_helper_android.h"
-#include "chrome/browser/android/service_tab_launcher.h"
-#include "chrome/browser/android/tab_android.h"
-#include "chrome/browser/ui/android/tab_model/tab_model_list.h"
-#include "content/public/browser/page_navigator.h"
 #endif
 
 namespace brave_ads {
@@ -185,16 +175,11 @@ net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotationTag() {
     )");
 }
 
-void RegisterResourceComponentsForCountryCode(const std::string& country_code) {
-  g_brave_browser_process->resource_component()
-      ->RegisterComponentForCountryCode(country_code);
-}
-
-void RegisterResourceComponentsForDefaultLanguageCode() {
+void RegisterResourceComponentsForDefaultLanguageCode(
+    brave_ads::ResourceComponent* resource_component) {
   const std::string& locale = brave_l10n::GetDefaultLocaleString();
   const std::string language_code = brave_l10n::GetISOLanguageCode(locale);
-  g_brave_browser_process->resource_component()
-      ->RegisterComponentForLanguageCode(language_code);
+  resource_component->RegisterComponentForLanguageCode(language_code);
 }
 
 void OnUrlLoaderResponseStartedCallback(
@@ -214,16 +199,18 @@ AdsServiceImpl::AdsServiceImpl(
         adaptive_captcha_service,
     std::unique_ptr<AdsTooltipsDelegate> ads_tooltips_delegate,
     std::unique_ptr<DeviceId> device_id,
-    std::unique_ptr<BatAdsServiceFactory> bat_ads_service_factory,
+    std::unique_ptr<AdsServiceDelegate> ads_service_delegate,
+    brave_ads::ResourceComponent* resource_component,
     history::HistoryService* history_service,
     brave_rewards::RewardsService* rewards_service)
     : profile_(profile),
       local_state_(local_state),
+      resource_component_(resource_component),
       history_service_(history_service),
       adaptive_captcha_service_(adaptive_captcha_service),
       ads_tooltips_delegate_(std::move(ads_tooltips_delegate)),
       device_id_(std::move(device_id)),
-      bat_ads_service_factory_(std::move(bat_ads_service_factory)),
+      ads_service_delegate_(std::move(ads_service_delegate)),
       file_task_runner_(base::ThreadPool::CreateSequencedTaskRunner(
           {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
            base::TaskShutdownBehavior::BLOCK_SHUTDOWN})),
@@ -252,8 +239,8 @@ AdsServiceImpl::AdsServiceImpl(
 
   GetDeviceIdAndMaybeStartBatAdsService();
 
-  if (g_brave_browser_process->resource_component()) {
-    g_brave_browser_process->resource_component()->AddObserver(this);
+  if (resource_component_) {
+    resource_component_->AddObserver(this);
   } else {
     CHECK_IS_TEST();
   }
@@ -262,8 +249,8 @@ AdsServiceImpl::AdsServiceImpl(
 }
 
 AdsServiceImpl::~AdsServiceImpl() {
-  if (g_brave_browser_process->resource_component()) {
-    g_brave_browser_process->resource_component()->RemoveObserver(this);
+  if (resource_component_) {
+    resource_component_->RemoveObserver(this);
   }
 
   bat_ads_observer_receiver_.reset();
@@ -287,7 +274,7 @@ void AdsServiceImpl::RegisterResourceComponents() const {
   if (UserHasOptedInToNotificationAds()) {
     // Only utilized for text classification, which requires the user to have
     // joined Brave Rewards and opted into notification ads.
-    RegisterResourceComponentsForDefaultLanguageCode();
+    RegisterResourceComponentsForDefaultLanguageCode(resource_component_);
   }
 }
 
@@ -303,7 +290,7 @@ void AdsServiceImpl::Migrate() {
 void AdsServiceImpl::RegisterResourceComponentsForCurrentCountryCode() const {
   const std::string country_code = brave_l10n::GetCountryCode(local_state_);
 
-  RegisterResourceComponentsForCountryCode(country_code);
+  resource_component_->RegisterComponentForCountryCode(country_code);
 }
 
 bool AdsServiceImpl::UserHasJoinedBraveRewards() const {
@@ -375,7 +362,7 @@ void AdsServiceImpl::MaybeStartBatAdsService() {
 void AdsServiceImpl::StartBatAdsService() {
   CHECK(!IsBatAdsServiceBound());
 
-  bat_ads_service_remote_ = bat_ads_service_factory_->Launch();
+  bat_ads_service_remote_ = ads_service_delegate_->LaunchBatAdsService();
   bat_ads_service_remote_.set_disconnect_handler(
       base::BindOnce(&AdsServiceImpl::DisconnectHandler, AsWeakPtr()));
 
@@ -727,7 +714,7 @@ void AdsServiceImpl::OnOptedInToAdsPrefChanged(const std::string& path) {
     // Register language resource components if the user has joined Brave
     // Rewards, opted into notification ads, and the Bat Ads Service has
     // already started.
-    RegisterResourceComponentsForDefaultLanguageCode();
+    RegisterResourceComponentsForDefaultLanguageCode(resource_component_);
   }
 
   MaybeStartBatAdsService();
@@ -959,7 +946,7 @@ void AdsServiceImpl::OpenNewTabWithAd(const std::string& placement_id) {
 
   if (IsReminder(placement_id)) {
     const GURL target_url = GetReminderTargetUrl();
-    OpenNewTabWithUrl(target_url);
+    ads_service_delegate_->OpenNewTabWithUrl(target_url);
     return CloseNotificationAd(placement_id);
   }
 
@@ -980,37 +967,7 @@ void AdsServiceImpl::OpenNewTabWithAdCallback(
 
   const NotificationAdInfo notification = NotificationAdFromValue(*dict);
 
-  OpenNewTabWithUrl(notification.target_url);
-}
-
-void AdsServiceImpl::OpenNewTabWithUrl(const GURL& url) {
-  if (g_browser_process->IsShuttingDown()) {
-    return;
-  }
-
-  if (!url.is_valid()) {
-    return VLOG(1) << "Failed to open new tab due to invalid URL: " << url;
-  }
-
-#if BUILDFLAG(IS_ANDROID)
-  // ServiceTabLauncher can currently only launch new tabs
-  const content::OpenURLParams params(url, content::Referrer(),
-                                      WindowOpenDisposition::NEW_FOREGROUND_TAB,
-                                      ui::PAGE_TRANSITION_LINK, true);
-  ServiceTabLauncher::GetInstance()->LaunchTab(
-      profile_, params, base::BindOnce([](content::WebContents*) {}));
-#else
-  Browser* browser = chrome::FindTabbedBrowser(profile_, false);
-  if (!browser) {
-    browser = Browser::Create(Browser::CreateParams(profile_, true));
-  }
-
-  NavigateParams nav_params(browser, url, ui::PAGE_TRANSITION_LINK);
-  nav_params.disposition = WindowOpenDisposition::SINGLETON_TAB;
-  nav_params.window_action = NavigateParams::SHOW_WINDOW;
-  nav_params.path_behavior = NavigateParams::RESPECT;
-  Navigate(&nav_params);
-#endif
+  ads_service_delegate_->OpenNewTabWithUrl(notification.target_url);
 }
 
 void AdsServiceImpl::RetryOpeningNewTabWithAd(const std::string& placement_id) {
@@ -1658,7 +1615,7 @@ void AdsServiceImpl::LoadComponentResource(
     const int version,
     LoadComponentResourceCallback callback) {
   std::optional<base::FilePath> file_path =
-      g_brave_browser_process->resource_component()->MaybeGetPath(id, version);
+      resource_component_->MaybeGetPath(id, version);
   if (!file_path) {
     return std::move(callback).Run({});
   }
