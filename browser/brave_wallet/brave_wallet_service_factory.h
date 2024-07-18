@@ -15,10 +15,6 @@ template <typename T>
 class NoDestructor;
 }  // namespace base
 
-namespace network {
-class SharedURLLoaderFactory;
-}  // namespace network
-
 namespace brave_wallet {
 
 class BraveWalletService;
@@ -29,9 +25,6 @@ class BraveWalletServiceFactory : public BrowserContextKeyedServiceFactory {
   static BraveWalletService* GetServiceForContext(
       content::BrowserContext* context);
   static BraveWalletServiceFactory* GetInstance();
-
-  void SetURLLoaderFactoryForTesting(
-      scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory);
 
  private:
   friend base::NoDestructor<BraveWalletServiceFactory>;
@@ -47,11 +40,6 @@ class BraveWalletServiceFactory : public BrowserContextKeyedServiceFactory {
       content::BrowserContext* context) const override;
   content::BrowserContext* GetBrowserContextToUse(
       content::BrowserContext* context) const override;
-
-  scoped_refptr<network::SharedURLLoaderFactory> GetURLLoaderFactory(
-      content::BrowserContext* context) const;
-
-  scoped_refptr<network::SharedURLLoaderFactory> testing_url_loader_factory_;
 };
 
 }  // namespace brave_wallet

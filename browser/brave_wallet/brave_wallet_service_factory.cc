@@ -49,30 +49,18 @@ BraveWalletServiceFactory::~BraveWalletServiceFactory() = default;
 
 KeyedService* BraveWalletServiceFactory::BuildServiceInstanceFor(
     content::BrowserContext* context) const {
+  auto* default_storage_partition = context->GetDefaultStoragePartition();
+  auto shared_url_loader_factory =
+      default_storage_partition->GetURLLoaderFactoryForBrowserProcess();
+
   return new BraveWalletService(
-      GetURLLoaderFactory(context), BraveWalletServiceDelegate::Create(context),
+      shared_url_loader_factory, BraveWalletServiceDelegate::Create(context),
       user_prefs::UserPrefs::Get(context), g_browser_process->local_state());
 }
 
 content::BrowserContext* BraveWalletServiceFactory::GetBrowserContextToUse(
     content::BrowserContext* context) const {
   return context;
-}
-
-scoped_refptr<network::SharedURLLoaderFactory>
-BraveWalletServiceFactory::GetURLLoaderFactory(
-    content::BrowserContext* context) const {
-  if (testing_url_loader_factory_) {
-    return testing_url_loader_factory_;
-  }
-
-  auto* default_storage_partition = context->GetDefaultStoragePartition();
-  return default_storage_partition->GetURLLoaderFactoryForBrowserProcess();
-}
-
-void BraveWalletServiceFactory::SetURLLoaderFactoryForTesting(
-    scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory) {
-  testing_url_loader_factory_ = url_loader_factory;
 }
 
 }  // namespace brave_wallet

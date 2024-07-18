@@ -316,9 +316,6 @@ class BraveWalletServiceUnitTest : public testing::Test {
     }
 #endif
 
-    brave_wallet::BraveWalletServiceFactory::GetInstance()
-        ->SetURLLoaderFactoryForTesting(shared_url_loader_factory_);
-
     histogram_tester_ = std::make_unique<base::HistogramTester>();
     bitcoin_test_rpc_server_ = std::make_unique<BitcoinTestRpcServer>();
 
@@ -329,6 +326,21 @@ class BraveWalletServiceUnitTest : public testing::Test {
         TestingBrowserProcess::GetGlobal());
     RegisterUserProfilePrefs(prefs->registry());
     builder.SetPrefService(std::move(prefs));
+    builder.AddTestingFactory(
+        brave_wallet::BraveWalletServiceFactory::GetInstance(),
+        base::BindRepeating(
+            [](scoped_refptr<network::SharedURLLoaderFactory>
+                   shared_url_loader_factory,
+               TestingPrefServiceSimple* local_state,
+               content::BrowserContext* context)
+                -> std::unique_ptr<KeyedService> {
+              auto* profile = Profile::FromBrowserContext(context);
+              return std::make_unique<BraveWalletService>(
+                  shared_url_loader_factory,
+                  BraveWalletServiceDelegate::Create(profile),
+                  profile->GetPrefs(), local_state);
+            },
+            shared_url_loader_factory_, local_state_->Get()));
     profile_ = builder.Build();
     service_ = brave_wallet::BraveWalletServiceFactory::GetServiceForContext(
         profile_.get());
