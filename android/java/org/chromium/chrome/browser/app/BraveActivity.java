@@ -316,7 +316,20 @@ public abstract class BraveActivity extends ChromeActivity
         }
     }
 
-    public BraveActivity() {}
+    public BraveActivity() {
+        // TODO(alexeybarabash): remove when done
+        // Print some values to avoid build errors like
+        // Warning: The resource R.dimen.md_incognito_ntp_padding_left appears to be unused [UnusedResources]
+        Log.e("BraveActivity", "R.dimen.md_incognito_ntp_line_spacing="+R.dimen.md_incognito_ntp_line_spacing);
+        Log.e("BraveActivity", "R.dimen.md_incognito_ntp_padding_left="+R.dimen.md_incognito_ntp_padding_left);
+        Log.e("BraveActivity", "R.layout.incognito_cookie_controls_card="+R.layout.incognito_cookie_controls_card);
+        Log.e("BraveActivity", "R.layout.incognito_description_layout="+R.layout.incognito_description_layout);
+        Log.e("BraveActivity", "R.layout.incognito_tracking_protection_card="+R.layout.incognito_tracking_protection_card);
+        Log.e("BraveActivity", "R.layout.logo_view_layout="+R.layout.logo_view_layout);
+        Log.e("BraveActivity", "R.style.Widget_BrowserUI_Switch_Incognito="+R.style.Widget_BrowserUI_Switch_Incognito);
+        Log.e("BraveActivity", "R.style.CardTransparentForDark="+R.style.CardTransparentForDark);
+        Log.e("BraveActivity", "R.style.TextAppearance_IncognitoNewTabLearnMoreLinkModern="+R.style.TextAppearance_IncognitoNewTabLearnMoreLinkModern);
+    }
 
     @Override
     public void onResumeWithNative() {
