@@ -8,7 +8,6 @@
 #include <optional>
 #include <utility>
 
-#include "base/check_is_test.h"
 #include "base/memory/raw_ptr.h"
 #include "base/notreached.h"
 #include "brave/app/brave_command_ids.h"
@@ -73,12 +72,9 @@ class VPNButtonMenuModel : public ui::SimpleMenuModel,
         browser_(browser),
         service_(brave_vpn::BraveVpnServiceFactory::GetForProfile(
             browser_->profile())) {
-    if (service_) {
-      Observe(service_);
-      Build(service_->is_purchased_user());
-    } else {
-      CHECK_IS_TEST();
-    }
+    CHECK(service_);
+    Observe(service_);
+    Build(service_->is_purchased_user());
   }
 
   ~VPNButtonMenuModel() override = default;
@@ -131,12 +127,9 @@ BraveVPNButton::BraveVPNButton(Browser* browser)
       browser_(browser),
       service_(brave_vpn::BraveVpnServiceFactory::GetForProfile(
           browser_->profile())) {
-  if (service_) {
-    UpdateButtonState();
-    Observe(service_);
-  } else {
-    CHECK_IS_TEST();
-  }
+  CHECK(service_);
+  UpdateButtonState();
+  Observe(service_);
 
   // The MenuButtonController makes sure the panel closes when clicked if the
   // panel is already open.
@@ -318,15 +311,14 @@ void BraveVPNButton::OnThemeChanged() {
 }
 
 bool BraveVPNButton::IsConnected() const {
-  return service_ ? service_->IsConnected() : false;
+  return service_->IsConnected();
 }
 
 ConnectionState BraveVPNButton::GetVpnConnectionState() const {
   if (connection_state_for_testing_) {
     return connection_state_for_testing_.value();
   }
-  return service_ ? service_->GetConnectionState()
-                  : ConnectionState::CONNECT_NOT_ALLOWED;
+  return service_->GetConnectionState();
 }
 
 bool BraveVPNButton::IsConnectError() const {
@@ -336,7 +328,7 @@ bool BraveVPNButton::IsConnectError() const {
 }
 
 bool BraveVPNButton::IsPurchased() const {
-  return service_ ? service_->is_purchased_user() : false;
+  return service_->is_purchased_user();
 }
 void BraveVPNButton::OnButtonPressed(const ui::Event& event) {
   chrome::ExecuteCommand(browser_, IDC_SHOW_BRAVE_VPN_PANEL);
