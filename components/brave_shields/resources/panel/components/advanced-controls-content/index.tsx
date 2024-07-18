@@ -217,7 +217,7 @@ function AdvancedControlsContent () {
               hidden={!isWebcompatExceptionsServiceEnabled}
               aria-label={getLocale('braveShieldsFingerprintingBlockedStd')}
               onClick={() => setViewType?.(ViewType.FingerprintList)}
-              disabled={invokedWebcompatListCount <= 0}
+              disabled={invokedWebcompatListCount <= 0 || siteSettings?.fingerprintMode === FingerprintMode.ALLOW_MODE}
             >
               {invokedWebcompatListCount > 99 ? '99+' : invokedWebcompatListCount}
             </S.CountButton>
