@@ -28,7 +28,7 @@ class AdsServiceDelegateImpl : public AdsServiceDelegate {
   void OpenNewTabWithUrl(const GURL& url) override;
 
  private:
-  raw_ptr<Profile> profile_ = nullptr;  // NOT OWNED
+  const raw_ptr<Profile> profile_ = nullptr;  // NOT OWNED
 };
 
 }  // namespace brave_ads

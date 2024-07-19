@@ -17,6 +17,7 @@ source_set("delegate") {
     "//brave/components/brave_ads/core",
     "//brave/components/services/bat_ads:lib",
     "//chrome/browser:browser_process",
+    "//chrome/browser/profiles:profile",
     "//chrome/browser/ui",
     "//content/public/browser",
     "//mojo/public/cpp/bindings",
