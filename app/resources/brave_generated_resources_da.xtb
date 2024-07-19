@@ -53,7 +53,6 @@ Eller skift senere på<ph name="SETTINGS_EXTENIONS_LINK"/>.</translation>
 <translation id="3094628781200061820">Udgiv og find filer fra IPFS</translation>
 <translation id="9220923434129933852">Læs og modificér IPFS-indstillinger</translation>
 <translation id="7398397225367092613">.onion</translation>
-<translation id="406832631167785034">Åbn via .onion-adresse</translation>
 <translation id="4759098689276706664">Tving indsæt</translation>
 <translation id="4901618511712685702">Importér til IPFS</translation>
 <translation id="6794469945030154569">Denne webside</translation>
@@ -122,6 +121,7 @@ vindue med Tor</translation>
 <translation id="8606416238399082160">100 % uforstyrret, 100 % uafhængigt og med fantastiske AI-funktioner.</translation>
 <translation id="5240031343741051161">Prøv Brave-søgninger</translation>
 <translation id="5234764350956374838">Luk</translation>
+<translation id="9218430445555521422">Indstil som standard</translation>
 <translation id="2370739752330685659">Måske senere</translation>
 <translation id="5100490448228945668">Afvis Braves søgekonvertering, tryk på Enter for at fjerne dette forslag.</translation>
 <translation id="9194637241566114638">Hjælp os med at forbedre <ph name="SEARCH_NAME"/> ved at sende anonym brugerdata. <ph name="MORE_INFO"/></translation>
@@ -167,8 +167,7 @@ vindue med Tor</translation>
 <translation id="6959315322491671328">Højreklik for at fjerne</translation>
 <translation id="495046168593986294">Scroll op</translation>
 <translation id="4021716437419160885">Scroll ned</translation>
-<translation id="1907157509746585817">bogmærker</translation>
-<translation id="4840597165888262798">læseliste</translation>
+<translation id="2702801445560668637">Læseliste</translation>
 <translation id="2533715613366623756">Bogmærkeadministrator</translation>
 <translation id="3405021928725149239">Bogmærkeadministrator</translation>
 <translation id="6284218950354553099">Send automatisk dagligt ping om brug til Brave</translation>
@@ -252,7 +251,6 @@ DU kan læse <ph name="BEGIN_LINK_BUILD_INSTRUCTIONS"/>instruktioner om hvordan 
 <translation id="796831669370432378">Klik på bogmærkeknappen for at tilføje et bogmærke ved siden af adresselinjen</translation>
 <translation id="8487693399751278191">Importér bogmærker nu...</translation>
 <translation id="2557899542277210112">For hurtig adgang skal du placere dine bogmærker her på bogmærkelinien.</translation>
-<translation id="2702801445560668637">Læseliste</translation>
 <translation id="1968543937259008435">Klar til mere privatliv online?</translation>
 <translation id="6817415381278637662">Vælg Brave som din standardbrowser for at få Braves privatlivsbeskyttelse på alle websider, du åbner.</translation>
 <translation id="8722651357687610395">Indstil Brave som standard</translation>
@@ -463,10 +461,6 @@ DU kan læse <ph name="BEGIN_LINK_BUILD_INSTRUCTIONS"/>instruktioner om hvordan 
 <translation id="2808630562319398131">Nulstil Brave-belønningsdata...</translation>
 <translation id="6438096877646138757">Sider, der fjerner cookies, når du lukker dem</translation>
 <translation id="2988792685798128092">Fjern, når siden lukkes</translation>
-<translation id="4663317021223369617">Cookies og site-data</translation>
-<translation id="7050661313034564003">Vis alle cookies og lokalt gemt data for dette site</translation>
-<translation id="8339059274628563283">Data fra <ph name="SITE"/>, der er gemt lokalt</translation>
-<translation id="1963227389609234879">Slet alle</translation>
 <translation id="7702907602086592255">Domæne</translation>
 <translation id="3202131003361292969">Sti</translation>
 <translation id="5390743329570580756">Send til</translation>
