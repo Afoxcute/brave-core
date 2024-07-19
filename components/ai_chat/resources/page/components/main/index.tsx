@@ -27,6 +27,7 @@ import PageContextToggle from '../page_context_toggle'
 import styles from './style.module.scss'
 import ToolsButtonMenu from '../tools_button_menu'
 import SidebarNav from '../sidebar_nav'
+import { PageTitleHeader } from '../header'
 
 const SCROLL_BOTTOM_THRESHOLD = 10.0
 
@@ -38,10 +39,6 @@ function Main() {
     currentError,
     apiHasError
   } = context
-
-  const handleEraseClick = () => {
-    getPageHandlerInstance().pageHandler.clearConversationHistory()
-  }
 
   const shouldShowPremiumSuggestionForModel =
     hasAcceptedAgreement &&
@@ -58,7 +55,6 @@ function Main() {
     siteInfo === null && // SiteInfo request has finished and this is a standalone conversation
     !context.isPremiumUser
 
-  const shouldDisplayEraseAction = context.conversationHistory.length >= 1
   const showContextToggle = context.conversationHistory.length === 0 && siteInfo?.isContentAssociationPossible
 
   let currentErrorElement = null
@@ -113,41 +109,7 @@ function Main() {
         </div>
       )}
       {context.showAgreementModal && <PrivacyMessage />}
-      <div className={styles.header}>
-        <div className={styles.logo}>
-          <Icon name='product-brave-leo' />
-          <div className={styles.logoTitle}>Leo AI</div>
-          {context.isPremiumUser && <div className={styles.badgePremium}>PREMIUM</div>}
-        </div>
-        <div className={styles.actions}>
-          {hasAcceptedAgreement && (
-            <>
-            {shouldDisplayEraseAction && (
-              <Button
-                fab
-                kind='plain-faint'
-                aria-label='Erase conversation history'
-                title='Erase conversation history'
-                onClick={handleEraseClick}
-              >
-                <Icon name='erase' />
-              </Button>
-            )}
-            <FeatureButtonMenu />
-            <Button
-              fab
-              kind='plain-faint'
-              aria-label='Close'
-              title='Close'
-              className={styles.closeButton}
-              onClick={() => getPageHandlerInstance().pageHandler.closePanel()}
-            >
-              <Icon name='close' />
-            </Button>
-            </>
-          )}
-        </div>
-      </div>
+      <PageTitleHeader />
       <div className={classnames({
         [styles.scroller]: true,
         [styles.flushBottom]: !hasAcceptedAgreement
