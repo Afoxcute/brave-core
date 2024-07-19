@@ -100,6 +100,7 @@ class AdsServiceImpl final : public AdsService,
 
   void RegisterResourceComponents() const;
   void RegisterResourceComponentsForCurrentCountryCode() const;
+  void RegisterResourceComponentsForDefaultLanguageCode() const;
 
   void Migrate();
 

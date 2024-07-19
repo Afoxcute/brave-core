@@ -175,13 +175,6 @@ net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotationTag() {
     )");
 }
 
-void RegisterResourceComponentsForDefaultLanguageCode(
-    brave_ads::ResourceComponent* resource_component) {
-  const std::string& locale = brave_l10n::GetDefaultLocaleString();
-  const std::string language_code = brave_l10n::GetISOLanguageCode(locale);
-  resource_component->RegisterComponentForLanguageCode(language_code);
-}
-
 void OnUrlLoaderResponseStartedCallback(
     const GURL& /*final_url*/,
     const network::mojom::URLResponseHead& response_head) {
@@ -221,6 +214,7 @@ AdsServiceImpl::AdsServiceImpl(
   CHECK(profile_);
   CHECK(adaptive_captcha_service_);
   CHECK(device_id_);
+  CHECK(ads_service_delegate_);
   CHECK(rewards_service_);
   CHECK(profile->IsRegularProfile());
 
@@ -274,7 +268,7 @@ void AdsServiceImpl::RegisterResourceComponents() const {
   if (UserHasOptedInToNotificationAds()) {
     // Only utilized for text classification, which requires the user to have
     // joined Brave Rewards and opted into notification ads.
-    RegisterResourceComponentsForDefaultLanguageCode(resource_component_);
+    RegisterResourceComponentsForDefaultLanguageCode();
   }
 }
 
@@ -288,9 +282,18 @@ void AdsServiceImpl::Migrate() {
 }
 
 void AdsServiceImpl::RegisterResourceComponentsForCurrentCountryCode() const {
-  const std::string country_code = brave_l10n::GetCountryCode(local_state_);
+  if (resource_component_) {
+    const std::string country_code = brave_l10n::GetCountryCode(local_state_);
+    resource_component_->RegisterComponentForCountryCode(country_code);
+  }
+}
 
-  resource_component_->RegisterComponentForCountryCode(country_code);
+void AdsServiceImpl::RegisterResourceComponentsForDefaultLanguageCode() const {
+  if (resource_component_) {
+    const std::string& locale = brave_l10n::GetDefaultLocaleString();
+    const std::string language_code = brave_l10n::GetISOLanguageCode(locale);
+    resource_component_->RegisterComponentForLanguageCode(language_code);
+  }
 }
 
 bool AdsServiceImpl::UserHasJoinedBraveRewards() const {
@@ -714,7 +717,7 @@ void AdsServiceImpl::OnOptedInToAdsPrefChanged(const std::string& path) {
     // Register language resource components if the user has joined Brave
     // Rewards, opted into notification ads, and the Bat Ads Service has
     // already started.
-    RegisterResourceComponentsForDefaultLanguageCode(resource_component_);
+    RegisterResourceComponentsForDefaultLanguageCode();
   }
 
   MaybeStartBatAdsService();
@@ -965,9 +968,8 @@ void AdsServiceImpl::OpenNewTabWithAdCallback(
     return VLOG(1) << "Failed to get notification ad";
   }
 
-  const NotificationAdInfo notification = NotificationAdFromValue(*dict);
-
-  ads_service_delegate_->OpenNewTabWithUrl(notification.target_url);
+  const NotificationAdInfo notification_ad = NotificationAdFromValue(*dict);
+  ads_service_delegate_->OpenNewTabWithUrl(notification_ad.target_url);
 }
 
 void AdsServiceImpl::RetryOpeningNewTabWithAd(const std::string& placement_id) {
@@ -1614,6 +1616,10 @@ void AdsServiceImpl::LoadComponentResource(
     const std::string& id,
     const int version,
     LoadComponentResourceCallback callback) {
+  if (!resource_component_) {
+    return std::move(callback).Run({});
+  }
+
   std::optional<base::FilePath> file_path =
       resource_component_->MaybeGetPath(id, version);
   if (!file_path) {
