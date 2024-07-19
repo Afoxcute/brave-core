@@ -15,7 +15,7 @@ class SkBitmap;
 
 #define ScriptEnabled                    \
   ScriptEnabled(const KURL& script_url); \
-  bool ScriptEnabled_ChromiumImpl
+  bool ScriptEnabled
 
 #include "src/third_party/blink/renderer/core/frame/local_frame.h"  // IWYU pragma: export
 #undef ScriptEnabled

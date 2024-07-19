@@ -25,10 +25,7 @@
     PageGraph::ProvideTo(*this);                                   \
   })
 
-#define ScriptEnabled ScriptEnabled_ChromiumImpl
-
 #include "src/third_party/blink/renderer/core/frame/local_frame.cc"
-#undef ScriptEnabled
 #undef AddInspectorTraceEvents
 
 namespace blink {
@@ -115,7 +112,7 @@ SkBitmap LocalFrame::GetImageAtViewportPoint(const gfx::Point& viewport_point) {
 }
 
 bool LocalFrame::ScriptEnabled(const KURL& script_url) {
-  bool enabled = ScriptEnabled_ChromiumImpl();
+  bool enabled = ScriptEnabled();
   auto* client = GetContentSettingsClient();
   if (client) {
     return client->AllowScriptFromSource(enabled, script_url);
