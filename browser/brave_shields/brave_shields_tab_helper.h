@@ -65,7 +65,7 @@ class BraveShieldsTabHelper
   void SetBraveShieldsEnabled(bool is_enabled);
   GURL GetCurrentSiteURL();
   GURL GetFaviconURL(bool refresh);
-  base::flat_set<ContentSettingsType>& GetInvokedWebcompatFeatures();
+  const base::flat_set<ContentSettingsType>& GetInvokedWebcompatFeatures();
 
   AdBlockMode GetAdBlockMode();
   FingerprintMode GetFingerprintMode();

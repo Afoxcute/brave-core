@@ -159,7 +159,7 @@ std::vector<GURL> BraveShieldsTabHelper::GetFingerprintsList() {
   return fingerprints_list;
 }
 
-base::flat_set<ContentSettingsType>&
+const base::flat_set<ContentSettingsType>&
 BraveShieldsTabHelper::GetInvokedWebcompatFeatures() {
   return webcompat_features_invoked_;
 }

@@ -47,14 +47,15 @@ class WebcompatExceptionsService
   static WebcompatExceptionsService* GetInstance();
   // Callable from any thread; needed for functions like
   // HostContentSettingsMap::GetContentSetting(...)
-  const std::vector<ContentSettingsPattern> GetPatterns(
+  std::vector<ContentSettingsPattern> GetPatterns(
       ContentSettingsType webcompat_type);
-  void SetRules(const PatternsByWebcompatTypeMap& patterns_by_webcompat_type);
+  void SetRulesForTesting(PatternsByWebcompatTypeMap patterns_by_webcompat_type);
 
  private:
   void LoadWebcompatExceptions(const base::FilePath& install_dir);
   // Use around accesses to |patterns_by_webcompat_type_| to guarantee
   // thread safety.
+  void SetRules(PatternsByWebcompatTypeMap patterns_by_webcompat_type);
   base::Lock lock_;
   PatternsByWebcompatTypeMap patterns_by_webcompat_type_ GUARDED_BY(lock_);
   base::WeakPtrFactory<WebcompatExceptionsService> weak_factory_{this};

@@ -67,9 +67,9 @@ constexpr auto kWebcompatNamesToType =
 WebcompatExceptionsService* singleton = nullptr;
 
 bool AddRule(
-  PatternsByWebcompatTypeMap& patterns_by_webcompat_type,
   const ContentSettingsPattern& pattern,
-  const std::string& exception_string) {
+  const std::string& exception_string,
+  PatternsByWebcompatTypeMap& patterns_by_webcompat_type) {
   const auto it = kWebcompatNamesToType.find(exception_string);
   if (it != kWebcompatNamesToType.end()) {
     const auto webcompat_type = it->second;
@@ -83,16 +83,17 @@ bool AddRule(
 }
 
 void AddRules(
-  PatternsByWebcompatTypeMap& patterns_by_webcompat_type,
   const base::Value::List& include_strings,
-  const base::Value::Dict& rule_dict) {
+  const base::Value::Dict& rule_dict,
+  PatternsByWebcompatTypeMap& patterns_by_webcompat_type
+) {
   const base::Value* exceptions = rule_dict.Find(kExceptions);
   if (exceptions->is_list()) {
     for (const base::Value& include_string : include_strings) {
       const auto pattern =
           ContentSettingsPattern::FromString(include_string.GetString());
       for (const base::Value& exception : exceptions->GetList()) {
-        const bool success = AddRule(patterns_by_webcompat_type, pattern, exception.GetString());
+        const bool success = AddRule(pattern, exception.GetString(), patterns_by_webcompat_type);
         if (!success) {
           DLOG(ERROR) << "Unrecognized webcompat exception "
                       << exception.GetString();
@@ -106,8 +107,9 @@ void AddRules(
 }
 
 void ParseJsonRules(
-  PatternsByWebcompatTypeMap& patterns_by_webcompat_type,
-  const std::string& contents) {
+  const std::string& contents,
+  PatternsByWebcompatTypeMap& patterns_by_webcompat_type
+) {
   if (contents.empty()) {
     // We don't have the file yet.
     return;
@@ -134,7 +136,7 @@ void ParseJsonRules(
     if (include == nullptr) {
       DLOG(ERROR) << "No include parameter found";
     } else if (include->is_list()) {
-      AddRules(patterns_by_webcompat_type, include->GetList(), rule_dict);
+      AddRules(include->GetList(), rule_dict, patterns_by_webcompat_type);
     } else if (include->is_string()) {
       DLOG(ERROR) << "Not implemented yet";
     } else {
@@ -149,7 +151,7 @@ PatternsByWebcompatTypeMap ReadAndParseJsonRules(
   PatternsByWebcompatTypeMap patterns_by_webcompat_type;
   const auto raw_contents =
       brave_component_updater::GetDATFileAsString(txt_file_path);
-  ParseJsonRules(patterns_by_webcompat_type, raw_contents);
+  ParseJsonRules(raw_contents, patterns_by_webcompat_type);
   return patterns_by_webcompat_type;
 }
 
@@ -171,7 +173,7 @@ void WebcompatExceptionsService::LoadWebcompatExceptions(
                      weak_factory_.GetWeakPtr()));
 }
 
-const std::vector<ContentSettingsPattern>
+std::vector<ContentSettingsPattern>
 WebcompatExceptionsService::GetPatterns(ContentSettingsType webcompat_type) {
   base::AutoLock lock(lock_);
   const auto it = patterns_by_webcompat_type_.find(webcompat_type);
@@ -179,9 +181,15 @@ WebcompatExceptionsService::GetPatterns(ContentSettingsType webcompat_type) {
                                                  : it->second;
 }
 
-void WebcompatExceptionsService::SetRules(const PatternsByWebcompatTypeMap& patterns_by_webcompat_type) {
+void WebcompatExceptionsService::SetRules(
+  PatternsByWebcompatTypeMap patterns_by_webcompat_type) {
   base::AutoLock lock(lock_);
   patterns_by_webcompat_type_ = std::move(patterns_by_webcompat_type);
+}
+
+void WebcompatExceptionsService::SetRulesForTesting(
+  PatternsByWebcompatTypeMap patterns_by_webcompat_type) {
+    SetRules(std::move(patterns_by_webcompat_type));
 }
 
 // implementation of LocalDataFilesObserver

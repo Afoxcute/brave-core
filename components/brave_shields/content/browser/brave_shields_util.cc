@@ -878,7 +878,7 @@ bool IsWebcompatEnabled(HostContentSettingsMap* map,
   DCHECK(map);
 
   if (!url.SchemeIsHTTPOrHTTPS() && !url.is_empty()) {
-    return ControlType::BLOCK;
+    return false;
   }
 
   ContentSetting setting =
