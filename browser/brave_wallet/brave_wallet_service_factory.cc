@@ -63,4 +63,8 @@ content::BrowserContext* BraveWalletServiceFactory::GetBrowserContextToUse(
   return context;
 }
 
+bool BraveWalletServiceFactory::ServiceIsNULLWhileTesting() const {
+  return (g_browser_process->local_state() == nullptr);
+}
+
 }  // namespace brave_wallet
