@@ -10,6 +10,7 @@
 
 #include "base/containers/contains.h"
 #include "base/strings/string_number_conversions.h"
+#include "brave/browser/brave_news/brave_news_controller_factory.h"
 #include "brave/components/api_request_helper/api_request_helper.h"
 #include "brave/components/brave_news/browser/publishers_controller.h"
 #include "brave/components/brave_news/common/brave_news.mojom-shared.h"
@@ -59,13 +60,23 @@ class BraveNewsSuggestionsControllerTest : public testing::Test {
   BraveNewsSuggestionsControllerTest()
       : api_request_helper_(TRAFFIC_ANNOTATION_FOR_TESTS,
                             test_url_loader_factory_.GetSafeWeakWrapper()),
+        profile_(
+            TestingProfile::Builder()
+                .AddTestingFactory(
+                    brave_news::BraveNewsControllerFactory::GetInstance(),
+                    base::BindRepeating([](content::BrowserContext* context)
+                                            -> std::unique_ptr<KeyedService> {
+                      return nullptr;
+                    }))
+                .Build()),
         publishers_controller_(&api_request_helper_),
         suggestions_controller_(&publishers_controller_,
                                 &api_request_helper_,
                                 nullptr) {
-    profile_.GetPrefs()->SetBoolean(brave_news::prefs::kBraveNewsOptedIn, true);
-    profile_.GetPrefs()->SetBoolean(brave_news::prefs::kNewTabPageShowToday,
-                                    true);
+    profile_->GetPrefs()->SetBoolean(brave_news::prefs::kBraveNewsOptedIn,
+                                     true);
+    profile_->GetPrefs()->SetBoolean(brave_news::prefs::kNewTabPageShowToday,
+                                     true);
     SetLocale("en_US");
   }
   ~BraveNewsSuggestionsControllerTest() override = default;
@@ -88,9 +99,9 @@ class BraveNewsSuggestionsControllerTest : public testing::Test {
   }
 
   content::BrowserTaskEnvironment browser_task_environment_;
-  TestingProfile profile_;
   network::TestURLLoaderFactory test_url_loader_factory_;
   api_request_helper::APIRequestHelper api_request_helper_;
+  std::unique_ptr<TestingProfile> profile_;
 
   PublishersController publishers_controller_;
   SuggestionsController suggestions_controller_;
