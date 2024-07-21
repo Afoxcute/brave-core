@@ -3,9 +3,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // you can obtain one at https://mozilla.org/MPL/2.0/.
 
-const os = require('os')
-const chalk = require('chalk')
-const logUpdate = require('log-update')
+import os from os;
+import chalk from chalk;
+import logUpdate from 'log-update';
+// const os = require('os')
+// const chalk = require('chalk')
+// const logUpdate = require('log-update')
 const tsm =
   process.env.TEAMCITY_VERSION !== undefined
     ? require('teamcity-service-messages')
